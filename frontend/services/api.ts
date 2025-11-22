@@ -20,4 +20,23 @@ export const apiService = {
       start_time: new Date().toISOString(),
     };
   },
+
+  async enrollUser(userId: string, name: string, audioBlob: Blob): Promise<any> {
+    const formData = new FormData();
+    formData.append('user_id', userId);
+    formData.append('name', name);
+    formData.append('audio', audioBlob, 'enrollment.wav');
+
+    const response = await fetch(`${API_BASE_URL}/enrollment/create`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Enrollment failed');
+    }
+
+    return response.json();
+  },
 };
