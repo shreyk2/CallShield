@@ -1,0 +1,6 @@
+{
+  "user_id": "test_user_api",
+  "name": "Test User via API",
+  "embedding_dimension": 192,
+  "audio_duration": 10.0
+}
