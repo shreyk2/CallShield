@@ -19,6 +19,7 @@ class SessionCreate(BaseModel):
 class SessionResponse(BaseModel):
     """Response after creating a session"""
     session_id: str = Field(description="Unique session identifier")
+    user_id: str = Field(description="User identifier for this session")
     agent_prompt: str = Field(description="Initial agent greeting")
 
 

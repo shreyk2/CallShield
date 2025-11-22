@@ -2,12 +2,14 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, WebSocketException
 from ..services import get_session_manager
 from ..services.audio_processor import AudioProcessor, current_role
+from ..services.voice_embedding import get_voice_embedding
 from ..config import get_settings
 
 router = APIRouter(tags=["websocket"])
 
 # Initialize services
 audio_processor = AudioProcessor()
+voice_embedding = get_voice_embedding()
 settings = get_settings()
 
 
@@ -76,7 +78,7 @@ async def audio_stream(websocket: WebSocket, session_id: str):
             if role == "caller":
                 session_manager.append_caller_audio(session_id, audio_chunk)
                 
-                # Check if we have enough audio to analyze
+                # Check if we have enough audio to analyze (every 1 second of caller audio)
                 if audio_processor.should_analyze(
                     session.caller_audio,
                     settings.audio_chunk_size
@@ -84,11 +86,23 @@ async def audio_stream(websocket: WebSocket, session_id: str):
                     print(f"  → Caller audio buffer ready for analysis "
                           f"({len(session.caller_audio)} chunks)")
                     
-                    # TODO Phase 3: Perform voice verification here
-                    # - Convert caller_audio to tensor
-                    # - Compute voice embedding
-                    # - Calculate similarity with enrolled embedding
-                    # - Append match_score to session
+                    # Phase 3: Voice Verification
+                    try:
+                        # Convert caller_audio to tensor
+                        audio_tensor = audio_processor.concatenate_chunks(session.caller_audio)
+                        
+                        # Verify against enrolled user
+                        match_score = voice_embedding.verify_speaker(
+                            audio_tensor,
+                            session.user_id
+                        )
+                        
+                        # Store match score
+                        session_manager.append_match_score(session_id, match_score)
+                        print(f"  → Voice match score: {match_score:.3f}")
+                        
+                    except Exception as e:
+                        print(f"  ✗ Voice verification error: {e}")
                     
                     # TODO Phase 4: Perform deepfake detection here
                     # - Convert caller_audio to WAV

@@ -1,6 +1,6 @@
 """Voice Embedding - SpeechBrain ECAPA-TDNN for speaker verification"""
-# TODO: Implement in Phase 3 - Voice Verification
-
+import torch
+import numpy as np
 from pathlib import Path
 from typing import Optional
 
@@ -13,65 +13,115 @@ class VoiceEmbedding:
         model_name: str = "speechbrain/spkrec-ecapa-voxceleb",
         embeddings_dir: str = "../data/embeddings",
     ):
-        # TODO: Store config, create embeddings_dir, init model=None
-        pass
+        self.model_name = model_name
+        self.embeddings_dir = Path(embeddings_dir)
+        self.embeddings_dir.mkdir(parents=True, exist_ok=True)
+        self.model = None  # Lazy loaded
     
-    def compute_embedding(self, audio_tensor):
+    def _load_model(self):
+        """Lazy load the SpeechBrain model with torchaudio compatibility patch"""
+        if self.model is None:
+            # Patch torchaudio compatibility issue before importing speechbrain
+            import torchaudio
+            if not hasattr(torchaudio, 'list_audio_backends'):
+                # Monkey patch for newer torchaudio versions
+                torchaudio.list_audio_backends = lambda: ["sox", "soundfile"]
+            
+            from speechbrain.inference.speaker import EncoderClassifier
+            
+            print(f"Loading SpeechBrain model: {self.model_name}...")
+            self.model = EncoderClassifier.from_hparams(
+                source=self.model_name,
+                savedir="pretrained_models/spkrec-ecapa-voxceleb"
+            )
+            print("✓ Model loaded successfully")
+    
+    def compute_embedding(self, audio_tensor: torch.Tensor) -> np.ndarray:
         """
         Compute speaker embedding from audio tensor.
         
-        Implementation steps:
-        1. Lazy load SpeechBrain ECAPA model if not loaded
-        2. Ensure audio_tensor shape is (batch, time) - add batch dim if needed
-        3. Call model.encode_batch(audio_tensor) with torch.no_grad()
-        4. Extract embedding vector, convert to numpy
-        5. Return embedding as numpy array (typically 192-dim)
+        Args:
+            audio_tensor: 1D tensor of audio samples (mono, 16kHz)
         
-        For development: Can return random embedding until model is integrated
+        Returns:
+            192-dimensional embedding as numpy array
         """
-        # TODO: Implement embedding computation
-        pass
+        self._load_model()
+        
+        # SpeechBrain expects (batch, time)
+        if audio_tensor.dim() == 1:
+            audio_tensor = audio_tensor.unsqueeze(0)  # Add batch dimension
+        
+        # Compute embedding
+        with torch.no_grad():
+            embedding = self.model.encode_batch(audio_tensor)
+            # embedding shape: (batch, 1, embedding_dim)
+            embedding = embedding.squeeze().cpu().numpy()
+        
+        return embedding
     
-    def cosine_similarity(self, embedding1, embedding2) -> float:
+    def cosine_similarity(self, embedding1: np.ndarray, embedding2: np.ndarray) -> float:
         """
         Compute cosine similarity between two embeddings.
         
-        Implementation:
-        1. Calculate norms: np.linalg.norm(embedding1), np.linalg.norm(embedding2)
-        2. Compute dot product: np.dot(embedding1, embedding2)
-        3. Divide: similarity = dot_product / (norm1 * norm2)
-        4. Normalize from [-1, 1] to [0, 1]: (similarity + 1.0) / 2.0
-        5. Return float in range [0, 1]
+        Returns:
+            Similarity score in range [0, 1] where 1 = identical, 0 = opposite
         """
-        # TODO: Implement cosine similarity
-        pass
+        # Compute cosine similarity
+        dot_product = np.dot(embedding1, embedding2)
+        norm1 = np.linalg.norm(embedding1)
+        norm2 = np.linalg.norm(embedding2)
+        
+        similarity = dot_product / (norm1 * norm2)
+        
+        # Normalize from [-1, 1] to [0, 1]
+        similarity = (similarity + 1.0) / 2.0
+        
+        return float(similarity)
     
-    def load_enrolled_embedding(self, user_id: str):
+    def load_enrolled_embedding(self, user_id: str) -> Optional[np.ndarray]:
         """
         Load pre-computed enrollment embedding from disk.
         
-        Implementation:
-        1. Build path: embeddings_dir / f"{user_id}_embedding.npy"
-        2. Check if file exists
-        3. Load with np.load(path)
-        4. Store in self.enrolled_embeddings[user_id]
-        5. Return embedding
+        Args:
+            user_id: User identifier (e.g., "demo_user")
+        
+        Returns:
+            Embedding array or None if not found
         """
-        # TODO: Implement loading from disk
-        pass
+        embedding_path = self.embeddings_dir / f"{user_id}_embedding.npy"
+        
+        if not embedding_path.exists():
+            print(f"✗ No enrollment found for user: {user_id}")
+            return None
+        
+        embedding = np.load(embedding_path)
+        print(f"✓ Loaded enrollment for {user_id}: shape {embedding.shape}")
+        return embedding
     
-    def verify_speaker(self, audio_tensor, user_id: str) -> float:
+    def verify_speaker(self, audio_tensor: torch.Tensor, user_id: str) -> float:
         """
         Verify if audio matches enrolled speaker.
         
-        Implementation:
-        1. Load enrolled embedding if not cached
-        2. Compute embedding for audio_tensor
-        3. Calculate cosine_similarity between enrolled and current
-        4. Return similarity score [0, 1]
+        Args:
+            audio_tensor: Audio to verify
+            user_id: User to verify against
+        
+        Returns:
+            Similarity score [0, 1] where higher = more similar
         """
-        # TODO: Implement speaker verification
-        pass
+        # Load enrolled embedding
+        enrolled_embedding = self.load_enrolled_embedding(user_id)
+        if enrolled_embedding is None:
+            return 0.0  # No enrollment = no match
+        
+        # Compute embedding for current audio
+        current_embedding = self.compute_embedding(audio_tensor)
+        
+        # Calculate similarity
+        similarity = self.cosine_similarity(enrolled_embedding, current_embedding)
+        
+        return similarity
 
 
 # Global instance - singleton pattern
@@ -80,5 +130,7 @@ _voice_embedding: Optional[VoiceEmbedding] = None
 
 def get_voice_embedding() -> VoiceEmbedding:
     """Get or create global voice embedding instance"""
-    # TODO: Implement singleton pattern
-    pass
+    global _voice_embedding
+    if _voice_embedding is None:
+        _voice_embedding = VoiceEmbedding()
+    return _voice_embedding

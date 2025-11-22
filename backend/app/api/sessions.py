@@ -31,6 +31,7 @@ async def create_session(request: SessionCreate):
     
     return SessionResponse(
         session_id=session.session_id,
+        user_id=request.user_id,
         agent_prompt=agent_prompt,
     )
 
