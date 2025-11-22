@@ -1,6 +1,7 @@
 """Session Manager - Manages session state and lifecycle"""
-# TODO: Implement in Phase 2 - Backend Core
-
+import time
+import uuid
+import threading
 from dataclasses import dataclass, field
 from typing import Dict, Optional
 
@@ -26,45 +27,97 @@ class SessionManager:
     """Manages active sessions with thread-safe operations"""
     
     def __init__(self, max_sessions: int = 100, timeout_seconds: int = 300):
-        # TODO: Initialize session storage (dict), threading lock, config
-        pass
+        self._sessions: Dict[str, Session] = {}
+        self._lock = threading.RLock()
+        self.max_sessions = max_sessions
+        self.timeout_seconds = timeout_seconds
     
     def create_session(self, user_id: str = "demo_user") -> Session:
-        """
-        Create a new session.
-        
-        Implementation steps:
-        1. Generate unique session_id (uuid4)
-        2. Check if at max_sessions, cleanup if needed
-        3. Create Session object with start_time
-        4. Store in _sessions dict (thread-safe)
-        5. Return session
-        """
-        pass
+        """Create a new session"""
+        with self._lock:
+            # Clean up old sessions if at capacity
+            if len(self._sessions) >= self.max_sessions:
+                self._cleanup_old_sessions()
+            
+            # Generate unique session ID
+            session_id = str(uuid.uuid4())
+            
+            # Create session object
+            session = Session(
+                session_id=session_id,
+                user_id=user_id,
+                start_time=time.time(),
+            )
+            
+            # Store in sessions dict
+            self._sessions[session_id] = session
+            
+            return session
     
     def get_session(self, session_id: str) -> Optional[Session]:
         """Get session by ID (thread-safe)"""
-        pass
+        with self._lock:
+            return self._sessions.get(session_id)
     
     def update_elapsed_time(self, session_id: str) -> None:
         """Update elapsed_time = current_time - start_time"""
-        pass
+        with self._lock:
+            session = self._sessions.get(session_id)
+            if session:
+                session.elapsed_time = time.time() - session.start_time
     
     def append_raw_audio(self, session_id: str, audio_chunk: bytes) -> None:
         """Append audio chunk to raw_audio buffer"""
-        pass
+        with self._lock:
+            session = self._sessions.get(session_id)
+            if session:
+                session.raw_audio.append(audio_chunk)
     
     def append_caller_audio(self, session_id: str, audio_chunk: bytes) -> None:
         """Append audio chunk to caller_audio buffer (only during caller windows)"""
-        pass
+        with self._lock:
+            session = self._sessions.get(session_id)
+            if session:
+                session.caller_audio.append(audio_chunk)
     
     def append_match_score(self, session_id: str, score: float) -> None:
         """Append voice match score to list"""
-        pass
+        with self._lock:
+            session = self._sessions.get(session_id)
+            if session:
+                session.match_scores.append(score)
     
     def append_fake_score(self, session_id: str, score: float) -> None:
         """Append deepfake probability score to list"""
-        pass
+        with self._lock:
+            session = self._sessions.get(session_id)
+            if session:
+                session.fake_scores.append(score)
+    
+    def close_session(self, session_id: str) -> None:
+        """Mark session as inactive"""
+        with self._lock:
+            session = self._sessions.get(session_id)
+            if session:
+                session.active = False
+    
+    def delete_session(self, session_id: str) -> None:
+        """Remove session from manager"""
+        with self._lock:
+            self._sessions.pop(session_id, None)
+    
+    def _cleanup_old_sessions(self) -> None:
+        """Remove oldest inactive or timed-out sessions"""
+        current_time = time.time()
+        sessions_to_remove = []
+        
+        for sid, session in self._sessions.items():
+            age = current_time - session.start_time
+            if not session.active or age > self.timeout_seconds:
+                sessions_to_remove.append(sid)
+        
+        for sid in sessions_to_remove:
+            del self._sessions[sid]
 
 
 # Global instance - singleton pattern
@@ -73,5 +126,7 @@ _session_manager: Optional[SessionManager] = None
 
 def get_session_manager() -> SessionManager:
     """Get or create global session manager instance"""
-    # TODO: Implement singleton pattern
-    pass
+    global _session_manager
+    if _session_manager is None:
+        _session_manager = SessionManager()
+    return _session_manager
