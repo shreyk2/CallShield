@@ -2,8 +2,9 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, WebSocketException
 import torch
 from ..services import get_session_manager, DeepfakeDetector
-from ..services.audio_processor import AudioProcessor, current_role
+from ..services.audio_processor import AudioProcessor
 from ..services.voice_embedding import get_voice_embedding
+from ..services.agent_script import get_current_window
 from ..config import get_settings
 
 router = APIRouter(tags=["websocket"])
@@ -42,9 +43,13 @@ async def audio_stream(websocket: WebSocket, session_id: str):
     try:
         # Main audio streaming loop
         import asyncio
+        from ..services.agent_script import get_total_script_duration
+        
         consecutive_timeouts = 0
         max_consecutive_timeouts = 3  # Close after 15s of no data (3 x 5s)
-        max_duration = 60.0  # Maximum call duration in seconds
+        script_duration = get_total_script_duration()
+        max_duration = script_duration + 30.0  # Script duration + 30s buffer for final caller response
+        print(f"  Script duration: {script_duration}s, Max call duration: {max_duration}s")
         last_deepfake_check = 0.0  # Track last time we ran deepfake detection
         deepfake_interval = 5.0  # Run deepfake every 5 seconds
         
@@ -79,8 +84,9 @@ async def audio_stream(websocket: WebSocket, session_id: str):
             # Append to raw audio buffer (all audio)
             session_manager.append_raw_audio(session_id, audio_chunk)
             
-            # Determine current speaker role
-            role = current_role(session.elapsed_time)
+            # Determine current speaker role using script-based timing
+            window = get_current_window(session.elapsed_time)
+            role = window["role"]
             
             # Log audio reception
             duration = audio_processor.get_duration(audio_chunk)
@@ -126,7 +132,7 @@ async def audio_stream(websocket: WebSocket, session_id: str):
                     time_since_last_check = session.elapsed_time - last_deepfake_check
                     audio_duration = len(session.caller_audio) * 0.1  # Each chunk is 0.1s
                     
-                    if time_since_last_check >= deepfake_interval and audio_duration >= 10.0:
+                    if time_since_last_check >= deepfake_interval and audio_duration >= 5.0:
                         try:
                             # Use ALL accumulated caller audio for better detection
                             print(f"  🔍 Running deepfake detection ({audio_duration:.1f}s of audio)...")

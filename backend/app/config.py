@@ -36,6 +36,16 @@ class Settings(BaseSettings):
     undetectable_api_key: str = ""
     undetectable_user_id: str = ""
     
+    # Auth Supabase
+    next_public_supabase_url: str = ""
+    next_public_supabase_anon_key: str = ""
+    supabase_jwt_secret: str = ""
+    
+    # Fish Audio TTS
+    fish_audio_api_key: str = ""
+    fish_audio_model: str = "fish-speech-1.5"
+    fish_audio_reference_id: str = ""  # Optional: for voice cloning
+    
     # Session management
     max_sessions: int = 100
     session_timeout_seconds: int = 300

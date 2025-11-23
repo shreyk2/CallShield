@@ -70,6 +70,28 @@ async def get_risk(session_id: str):
     )
 
 
+@router.get("/{session_id}/status")
+async def get_session_status(session_id: str):
+    """
+    Get session status (active/inactive).
+    
+    Returns whether the session is still active or has been closed.
+    """
+    # Get session manager
+    session_manager = get_session_manager()
+    
+    # Get session
+    session = session_manager.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    return {
+        "session_id": session_id,
+        "active": session.active,
+        "elapsed_time": session.elapsed_time
+    }
+
+
 @router.get("/{session_id}/export-audio")
 async def export_audio(session_id: str):
     """

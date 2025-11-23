@@ -2,13 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { useCallSession } from '@/hooks/useCallSession';
+import { useAgentAudio } from '@/hooks/useAgentAudio';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Phone, PhoneOff, Mic, ShieldAlert, ShieldCheck, ShieldQuestion, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function CallPage() {
-  const { sessionId, isRecording, startCall, endCall, riskStatus } = useCallSession();
+  const { sessionId, isRecording, startCall, endCall, riskStatus, sessionStartTime } = useCallSession();
+  const { isAgentSpeaking, currentText } = useAgentAudio(isRecording, sessionStartTime);
   const [duration, setDuration] = useState(0);
 
   // Timer logic
@@ -148,6 +150,16 @@ export default function CallPage() {
               )}
             </div>
 
+            {/* Agent Text Display */}
+            {currentText && isAgentSpeaking && (
+              <div className="w-full max-w-md text-center">
+                <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Agent Speaking</div>
+                <div className="text-sm text-foreground bg-blue-50 dark:bg-blue-950/30 px-4 py-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                  "{currentText}"
+                </div>
+              </div>
+            )}
+            
             {/* Session ID Display */}
             {sessionId && (
               <div className="text-xs text-muted-foreground font-mono bg-muted/50 px-3 py-1 rounded-full">

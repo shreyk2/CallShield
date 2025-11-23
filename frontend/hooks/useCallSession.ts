@@ -7,6 +7,7 @@ export const useCallSession = () => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [riskStatus, setRiskStatus] = useState<RiskResponse | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
   // Callback for audio data
@@ -36,6 +37,7 @@ export const useCallSession = () => {
       ws.onopen = () => {
         console.log('WebSocket connected');
         setIsConnected(true);
+        setSessionStartTime(Date.now());
         // 3. Start Audio Capture only after WS is open
         startCapture();
       };
@@ -63,6 +65,11 @@ export const useCallSession = () => {
       wsRef.current = null;
     }
     setIsConnected(false);
+    setSessionStartTime(null);
+    
+    // Clear localStorage to stop dashboard from polling
+    localStorage.removeItem('active_session_id');
+    
     setSessionId(null);
     setRiskStatus(null);
   }, [stopAudioCapture]);
@@ -88,6 +95,7 @@ export const useCallSession = () => {
     isRecording,
     isConnected,
     riskStatus,
+    sessionStartTime,
     startCall,
     endCall,
     analyser

@@ -20,9 +20,46 @@ export default function DashboardPage() {
       setActiveSessionId(storedSessionId);
       setIsAutoLoaded(true);
     }
-  }, []);
+    
+    // Listen for storage changes (works across tabs and same-page updates)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'active_session_id') {
+        if (e.newValue) {
+          // New session started, auto-load it
+          setSessionId(e.newValue);
+          setActiveSessionId(e.newValue);
+          setIsAutoLoaded(true);
+        } else {
+          // Session was cleared, stop monitoring
+          setActiveSessionId(null);
+          setIsAutoLoaded(false);
+        }
+      }
+    };
+    
+    // Poll localStorage for same-page updates (storage event doesn't fire in same tab)
+    const pollInterval = setInterval(() => {
+      const currentStoredId = localStorage.getItem('active_session_id');
+      if (currentStoredId && currentStoredId !== activeSessionId) {
+        // New session detected
+        setSessionId(currentStoredId);
+        setActiveSessionId(currentStoredId);
+        setIsAutoLoaded(true);
+      } else if (!currentStoredId && activeSessionId && isAutoLoaded) {
+        // Session cleared
+        setActiveSessionId(null);
+        setIsAutoLoaded(false);
+      }
+    }, 500); // Check every 500ms
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(pollInterval);
+    };
+  }, [activeSessionId, isAutoLoaded]);
   
-  const { riskScore, error } = useRiskPolling(activeSessionId);
+  const { riskScore, error, isSessionActive } = useRiskPolling(activeSessionId);
 
   const handleMonitor = (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,9 +92,14 @@ export default function DashboardPage() {
                 <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                   Session ID
                 </label>
-                {isAutoLoaded && (
+                {isAutoLoaded && isSessionActive && (
                   <span className="text-xs text-green-600 font-medium animate-pulse">
-                    ● Live Session Linked
+                    ● Live Session Active
+                  </span>
+                )}
+                {isAutoLoaded && !isSessionActive && (
+                  <span className="text-xs text-gray-500 font-medium">
+                    ○ Session Ended
                   </span>
                 )}
               </div>
