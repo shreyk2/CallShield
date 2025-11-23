@@ -1,16 +1,23 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter_Tight, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
-import { Header } from "@/components/Header";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const interTight = Inter_Tight({
   subsets: ["latin"],
+  variable: "--font-inter-tight",
+  weight: "600",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
+  variable: "--font-ibm-plex-sans",
+  weight: ["400", "500", "600"],
+});
+
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  variable: "--font-ibm-plex-mono",
+  weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -26,12 +33,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}
+        className={`${interTight.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable} antialiased min-h-screen flex flex-col font-sans`}
       >
-        <Header />
-        <main className="flex-1 container max-w-screen-2xl mx-auto py-6 px-4">
-          {children}
-        </main>
+        {children}
       </body>
     </html>
   );

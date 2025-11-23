@@ -31,6 +31,19 @@
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
+
+  --color-shield-bg: #0C0F12;
+  --color-shield-surface: #1A1D22;
+  --color-shield-surface-highlight: #2A2F38;
+  --color-shield-blue: #3BA4FF;
+  --color-shield-aqua: #4BF2C0;
+  --color-shield-amber: #FFB55A;
+  --color-shield-text: #F4F7FA;
+  --color-shield-text-secondary: #8E97A7;
+
+  --font-heading: var(--font-inter-tight);
+  --font-sans: var(--font-ibm-plex-sans);
+  --font-mono: var(--font-ibm-plex-mono);
 }
 
 :root {
