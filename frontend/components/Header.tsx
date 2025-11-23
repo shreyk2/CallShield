@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Shield, User } from "lucide-react";
+import { Shield, User, LogOut, Github } from "lucide-react"; // Added Icons
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
@@ -50,34 +50,43 @@ export function Header() {
     },
     {
       href: "/call",
-      label: "Call",
+      label: "Call Simulation",
       active: pathname === "/call",
     },
     {
       href: "/dashboard",
-      label: "Dashboard",
+      label: "Agent Dashboard",
       active: pathname === "/dashboard",
     },
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 max-w-screen-2xl items-center">
-        <div className="mr-4 flex">
-          <Link href="/" className="mr-6 flex items-center space-x-2">
-            <Shield className="h-6 w-6" />
-            <span className="hidden font-bold sm:inline-block">
+    // UPDATED: Dark theme, glassmorphism, and sticky positioning
+    <header className="sticky top-0 z-50 w-full border-b border-slate-800 bg-slate-950/70 backdrop-blur-md supports-[backdrop-filter]:bg-slate-950/60">
+      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+        
+        {/* Logo Section */}
+        <div className="flex items-center gap-8">
+          <Link href="/" className="flex items-center space-x-2 group">
+            <div className="p-1.5 bg-blue-500/10 rounded-lg group-hover:bg-blue-500/20 transition-colors">
+              <Shield className="h-5 w-5 text-blue-500" />
+            </div>
+            <span className="hidden font-bold text-lg tracking-tight text-white sm:inline-block">
               CallShield
             </span>
           </Link>
-          <nav className="flex items-center space-x-6 text-sm font-medium">
+
+          {/* Navigation Links */}
+          <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
             {routes.map((route) => (
               <Link
                 key={route.href}
                 href={route.href}
                 className={cn(
-                  "transition-colors hover:text-foreground/80",
-                  route.active ? "text-foreground" : "text-foreground/60"
+                  "transition-colors duration-200",
+                  route.active 
+                    ? "text-blue-400 font-semibold" 
+                    : "text-slate-400 hover:text-white"
                 )}
               >
                 {route.label}
@@ -85,41 +94,49 @@ export function Header() {
             ))}
           </nav>
         </div>
-        <div className="flex flex-1 items-center justify-end space-x-4">
-          <nav className="flex items-center">
-            <Button asChild variant="ghost" size="sm">
-              <Link
-                href="https://github.com/shreyk2/CallShield"
-                target="_blank"
-                rel="noreferrer"
-              >
-                GitHub
-              </Link>
-            </Button>
-          </nav>
+
+        {/* Right Side Actions */}
+        <div className="flex items-center gap-4">
+          <Button 
+            asChild 
+            variant="ghost" 
+            size="sm" 
+            className="text-slate-400 hover:text-white hover:bg-slate-800 hidden sm:flex"
+          >
+            <Link
+              href="https://github.com/shreyk2/CallShield"
+              target="_blank"
+              rel="noreferrer"
+              className="gap-2"
+            >
+              <Github className="w-4 h-4" />
+              GitHub
+            </Link>
+          </Button>
           
           {userEmail ? (
-            <div className="flex items-center gap-4 pl-4 border-l border-border">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <User className="w-4 h-4 text-primary" />
-                </div>
-                <span className="text-sm font-medium hidden sm:inline-block">
+            <div className="flex items-center gap-3 pl-3 border-l border-slate-800">
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800">
+                <User className="w-3.5 h-3.5 text-blue-400" />
+                <span className="text-xs font-medium text-slate-300">
                   {userEmail}
                 </span>
               </div>
+              
               <Button 
                 variant="ghost" 
-                size="sm"
+                size="icon"
+                className="h-8 w-8 text-slate-400 hover:text-red-400 hover:bg-red-400/10"
+                title="Sign Out"
                 onClick={async () => {
                   await supabase.auth.signOut();
                 }}
               >
-                Sign Out
+                <LogOut className="w-4 h-4" />
               </Button>
             </div>
           ) : (
-            <Button asChild size="sm" className="ml-4">
+            <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-500 text-white rounded-full px-6">
               <Link href="/login">Login</Link>
             </Button>
           )}
