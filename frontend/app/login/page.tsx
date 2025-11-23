@@ -51,7 +51,8 @@ export default function LoginPage() {
 
       if (error) throw error
 
-      alert('Sign up successful! You can now log in.')
+      // Redirect to enrollment page after successful sign up
+      router.push('/enrollment')
     } catch (err) {
       setError((err as Error).message)
     } finally {
