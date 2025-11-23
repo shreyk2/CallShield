@@ -16,8 +16,11 @@ export interface RiskResponse {
 
 export interface SessionStatus {
   session_id: string;
+  user_id: string;
   status: 'active' | 'completed' | 'error';
-  start_time: string;
+  active: boolean;
+  start_time: number;
+  elapsed_time: number;
 }
 
 export interface AudioConfig {

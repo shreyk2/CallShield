@@ -87,7 +87,9 @@ async def get_session_status(session_id: str):
     
     return {
         "session_id": session_id,
+        "user_id": session.user_id,
         "active": session.active,
+        "start_time": session.start_time,
         "elapsed_time": session.elapsed_time
     }
 

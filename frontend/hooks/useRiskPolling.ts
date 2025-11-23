@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { RiskResponse } from '@/types';
+import { RiskResponse, SessionStatus } from '@/types';
 import { apiService } from '@/services/api';
 
 export const useRiskPolling = (sessionId: string | null) => {
   const [riskScore, setRiskScore] = useState<RiskResponse | null>(null);
+  const [sessionStatus, setSessionStatus] = useState<SessionStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSessionActive, setIsSessionActive] = useState<boolean>(true);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -11,6 +12,7 @@ export const useRiskPolling = (sessionId: string | null) => {
   useEffect(() => {
     if (!sessionId) {
       setRiskScore(null);
+      setSessionStatus(null);
       setIsSessionActive(false);
       return;
     }
@@ -26,7 +28,8 @@ export const useRiskPolling = (sessionId: string | null) => {
           throw new Error('Session not found');
         }
         
-        const statusData = await statusResponse.json();
+        const statusData: SessionStatus = await statusResponse.json();
+        setSessionStatus(statusData);
         
         // If session is no longer active, stop polling
         if (!statusData.active) {
@@ -70,6 +73,7 @@ export const useRiskPolling = (sessionId: string | null) => {
 
   return {
     riskScore,
+    sessionStatus,
     error,
     isSessionActive
   };

@@ -27,7 +27,8 @@ async def verify_token(authorization: str = Header(...)):
 
         # Verify the token
         payload = jwt.decode(token, SUPABASE_JWT_SECRET, algorithms=["HS256"], audience="authenticated")
-        return payload['sub'] # Returns the User ID (UUID)
+        # Prefer email for display purposes in this demo, fallback to UUID
+        return payload.get('email', payload['sub'])
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired")
     except jwt.InvalidTokenError:
