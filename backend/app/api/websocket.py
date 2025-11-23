@@ -54,22 +54,7 @@ async def audio_stream(websocket: WebSocket, session_id: str):
         deepfake_interval = 5.0  # Run deepfake every 5 seconds
         
         while True:
-            # Receive binary PCM audio chunk from client with timeout
-            try:
-                audio_chunk = await asyncio.wait_for(
-                    websocket.receive_bytes(),
-                    timeout=5.0  # 5 second timeout
-                )
-                consecutive_timeouts = 0  # Reset on successful receive
-            except asyncio.TimeoutError:
-                consecutive_timeouts += 1
-                print(f"  Timeout waiting for audio chunk ({consecutive_timeouts}/{max_consecutive_timeouts})...")
-                if consecutive_timeouts >= max_consecutive_timeouts:
-                    print(f"  → Max consecutive timeouts reached, closing connection")
-                    break
-                continue
-            
-            # Update elapsed time
+            # Update elapsed time FIRST (before receiving audio)
             session_manager.update_elapsed_time(session_id)
             session = session_manager.get_session(session_id)
             
@@ -81,12 +66,35 @@ async def audio_stream(websocket: WebSocket, session_id: str):
                 print(f"\n✓ Reached max duration ({max_duration}s), closing connection")
                 break
             
-            # Append to raw audio buffer (all audio)
-            session_manager.append_raw_audio(session_id, audio_chunk)
-            
             # Determine current speaker role using script-based timing
             window = get_current_window(session.elapsed_time)
             role = window["role"]
+            
+            # Receive binary PCM audio chunk from client with timeout
+            try:
+                audio_chunk = await asyncio.wait_for(
+                    websocket.receive_bytes(),
+                    timeout=5.0  # 5 second timeout
+                )
+                consecutive_timeouts = 0  # Reset on successful receive
+            except asyncio.TimeoutError:
+                # During agent speaking time, timeouts are expected (mic is muted)
+                if role == "agent":
+                    # This is expected - agent is speaking, caller is muted
+                    if window.get("segment_index") is not None:
+                        print(f"  [{session.elapsed_time:.1f}s] Agent speaking (segment {window['segment_index']}), mic muted ✓")
+                    continue
+                else:
+                    # During caller time, count timeouts
+                    consecutive_timeouts += 1
+                    print(f"  [{session.elapsed_time:.1f}s] Timeout waiting for audio in CALLER mode ({consecutive_timeouts}/{max_consecutive_timeouts})...")
+                    if consecutive_timeouts >= max_consecutive_timeouts:
+                        print(f"  → Max consecutive timeouts reached, closing connection")
+                        break
+                    continue
+            
+            # Append to raw audio buffer (all audio)
+            session_manager.append_raw_audio(session_id, audio_chunk)
             
             # Log audio reception
             duration = audio_processor.get_duration(audio_chunk)
@@ -96,20 +104,22 @@ async def audio_stream(websocket: WebSocket, session_id: str):
             # If caller is speaking, add to caller buffer
             if role == "caller":
                 session_manager.append_caller_audio(session_id, audio_chunk)
+                caller_duration = len(session.caller_audio) * 0.1  # Each chunk is ~0.1s
                 
                 # Check if we have enough audio to analyze (every 3 seconds of caller audio)
                 if audio_processor.should_analyze(
                     session.caller_audio,
                     settings.audio_chunk_size * 3  # 3 seconds instead of 1
                 ):
-                    print(f"  → Caller audio buffer ready for analysis "
-                          f"({len(session.caller_audio)} chunks)")
+                    print(f"  → Caller audio buffer: {len(session.caller_audio)} chunks ({caller_duration:.1f}s)")
                     
                     # Phase 3: Voice Verification - Use ONLY last 5 seconds (50 chunks)
                     try:
                         # Use only the last 5 seconds of audio for fresh comparison
                         window_size = 50  # 50 chunks = 5 seconds at 0.1s per chunk
                         recent_audio = session.caller_audio[-window_size:] if len(session.caller_audio) >= window_size else session.caller_audio
+                        
+                        print(f"  🎤 Running voice similarity check ({len(recent_audio)*0.1:.1f}s of audio)...")
                         
                         # Convert recent audio to tensor
                         audio_tensor = audio_processor.concatenate_chunks(recent_audio)
@@ -122,20 +132,22 @@ async def audio_stream(websocket: WebSocket, session_id: str):
                         
                         # Store match score
                         session_manager.append_match_score(session_id, match_score)
-                        print(f"  → Voice match score: {match_score:.3f} (last {len(recent_audio)*0.1:.1f}s)")
+                        print(f"  ✅ Voice match score: {match_score:.3f} | Total scores: {len(session.match_scores)}")
                         
                     except Exception as e:
                         print(f"  ✗ Voice verification error: {e}")
+                        import traceback
+                        traceback.print_exc()
                     
                     # Phase 4: Deepfake Detection (every 5 seconds)
                     # Only run if: (1) enough time has passed AND (2) we have 20+ seconds of audio
                     time_since_last_check = session.elapsed_time - last_deepfake_check
                     audio_duration = len(session.caller_audio) * 0.1  # Each chunk is 0.1s
                     
-                    if time_since_last_check >= deepfake_interval and audio_duration >= 5.0:
+                    if time_since_last_check >= deepfake_interval and caller_duration >= 5.0:
                         try:
                             # Use ALL accumulated caller audio for better detection
-                            print(f"  🔍 Running deepfake detection ({audio_duration:.1f}s of audio)...")
+                            print(f"  🤖 Running deepfake detection ({caller_duration:.1f}s of audio, last check: {last_deepfake_check:.1f}s)...")
                             # Convert ALL caller_audio to WAV format
                             audio_tensor = audio_processor.concatenate_chunks(session.caller_audio)
                             # Properly convert to int16 with clipping to avoid overflow
@@ -144,7 +156,7 @@ async def audio_stream(websocket: WebSocket, session_id: str):
                             wav_bytes = deepfake_detector.bytes_to_wav(pcm_bytes, settings.sample_rate)
                             
                             # DEBUG: Save audio to file for analysis
-                            debug_path = f"debug_audio_{int(audio_duration)}s.wav"
+                            debug_path = f"debug_audio_{int(caller_duration)}s.wav"
                             with open(debug_path, 'wb') as f:
                                 f.write(wav_bytes)
                             print(f"    💾 Saved audio to {debug_path} ({len(wav_bytes)/1024:.1f}KB)")
@@ -154,12 +166,15 @@ async def audio_stream(websocket: WebSocket, session_id: str):
                             
                             # Store fake score
                             session_manager.append_fake_score(session_id, fake_score)
+                            print(f"  ✅ Deepfake score: {fake_score:.3f} | Total scores: {len(session.fake_scores)}")
                             
                             # Update last check time
                             last_deepfake_check = session.elapsed_time
                             
                         except Exception as e:
                             print(f"  ✗ Deepfake detection error: {e}")
+                            import traceback
+                            traceback.print_exc()
                     
                     # DON'T clear the buffer yet - keep accumulating for export
                     # session.caller_audio.clear()

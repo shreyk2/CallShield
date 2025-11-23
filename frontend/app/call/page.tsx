@@ -9,8 +9,8 @@ import { Phone, PhoneOff, Mic, ShieldAlert, ShieldCheck, ShieldQuestion, Activit
 import { cn } from "@/lib/utils";
 
 export default function CallPage() {
-  const { sessionId, isRecording, startCall, endCall, riskStatus, sessionStartTime } = useCallSession();
-  const { isAgentSpeaking, currentText } = useAgentAudio(isRecording, sessionStartTime);
+  const { sessionId, isRecording, startCall, endCall, riskStatus, sessionStartTime, setShouldSendAudio } = useCallSession();
+  const { isAgentSpeaking, currentText } = useAgentAudio(isRecording, sessionStartTime, setShouldSendAudio);
   const [duration, setDuration] = useState(0);
 
   // Timer logic

@@ -10,12 +10,14 @@ export const useCallSession = () => {
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
-  // Callback for audio data
+  const [shouldSendAudio, setShouldSendAudio] = useState(true);
+
+  // Callback for audio data - only send when it's caller time
   const handleAudioData = useCallback((data: Int16Array) => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && shouldSendAudio) {
       wsRef.current.send(data.buffer);
     }
-  }, []);
+  }, [shouldSendAudio]);
 
   const { isRecording, startCapture, stopCapture: stopAudioCapture, analyser } = useAudioCapture(handleAudioData);
 
@@ -98,6 +100,7 @@ export const useCallSession = () => {
     sessionStartTime,
     startCall,
     endCall,
-    analyser
+    analyser,
+    setShouldSendAudio  // Export so agent audio hook can control it
   };
 };

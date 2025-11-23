@@ -1,26 +1,31 @@
 """Agent conversation script for the call"""
 
-# Each segment has: text, expected_duration (seconds)
+# Each segment has: text, agent_duration (how long agent speaks), caller_duration (how long caller responds)
 AGENT_SCRIPT = [
     {
         "text": "Hello, this is Sarah from SecureBank customer support. How can I help you today?",
-        "duration": 5.0
+        "agent_duration": 7.0,
+        "caller_duration": 15.0  # Short initial response
     },
     {
         "text": "I see. Let me pull up your account information. Can you verify your account number for me?",
-        "duration": 5.0
+        "agent_duration": 6.0,
+        "caller_duration": 10.0  # Longer for account number
     },
     {
         "text": "Thank you for that. Now, for security purposes, I need to verify a few more details. What is your mother's maiden name?",
-        "duration": 5.0
+        "agent_duration": 8.5,
+        "caller_duration": 10.0  # Medium response
     },
     {
         "text": "Perfect. And can you confirm the last four digits of your social security number?",
-        "duration": 5.0
+        "agent_duration": 6.0,
+        "caller_duration": 10.0  # Quick response
     },
     {
         "text": "Thank you for verifying that information. How else can I assist you today?",
-        "duration": 5.0
+        "agent_duration": 6.0,
+        "caller_duration": 25.0  # Longer for open-ended question
     }
 ]
 
@@ -35,7 +40,8 @@ def get_agent_segment(segment_index: int) -> dict:
     if segment_index < 0 or segment_index >= len(AGENT_SCRIPT):
         return {
             "text": "Thank you for calling SecureBank. Is there anything else I can help you with?",
-            "duration": 5.0
+            "agent_duration": 5.0,
+            "caller_duration": 20.0
         }
     return AGENT_SCRIPT[segment_index]
 
@@ -50,16 +56,17 @@ def get_timing_windows():
     
     for i, segment in enumerate(AGENT_SCRIPT):
         # Agent speaks
+        agent_duration = segment["agent_duration"]
         windows.append({
             "start": current_time,
-            "end": current_time + segment["duration"],
+            "end": current_time + agent_duration,
             "role": "agent",
             "segment_index": i
         })
-        current_time += segment["duration"]
+        current_time += agent_duration
         
-        # Caller responds (20 seconds for each response except first which is shorter)
-        caller_duration = 15.0 if i == 0 else 20.0
+        # Caller responds (duration defined per segment)
+        caller_duration = segment["caller_duration"]
         windows.append({
             "start": current_time,
             "end": current_time + caller_duration,
@@ -82,9 +89,9 @@ def get_timing_windows():
 def get_total_script_duration() -> float:
     """Calculate total duration of the script (not including final open-ended caller segment)"""
     duration = 0.0
-    for i, segment in enumerate(AGENT_SCRIPT):
-        duration += segment["duration"]  # Agent speaking time
-        duration += 15.0 if i == 0 else 20.0  # Caller response time
+    for segment in AGENT_SCRIPT:
+        duration += segment["agent_duration"]  # Agent speaking time
+        duration += segment["caller_duration"]  # Caller response time
     return duration
 
 
