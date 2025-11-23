@@ -1,57 +1,59 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 export default function RiskSimulator() {
-  const [riskLevel, setRiskLevel] = useState(0); // 0: Safe, 1: Uncertain, 2: High Risk
+  const [riskLevel, setRiskLevel] = useState(0);
 
   const scenarios = [
     {
-      label: 'Trusted customer',
-      color: 'bg-shield-aqua',
-      textColor: 'text-shield-aqua',
-      matchScore: 97,
-      deepfakeScore: 3,
+      label: 'Trusted',
+      matchScore: 83,       // High Match
+      deepfakeScore: 0.5,   // Low Fake
       status: 'VERIFIED',
+      statusColor: 'text-emerald-400',
+      barColor: '#34d399', 
     },
     {
-      label: 'Uncertain',
-      color: 'bg-shield-blue',
-      textColor: 'text-shield-blue',
-      matchScore: 65,
-      deepfakeScore: 35,
-      status: 'ANALYZING',
+      label: 'Noisy Audio', // Changed from "Uncertain" to explain the discrepancy
+      matchScore: 45,       // Low Match (Bad mic/Environment)
+      deepfakeScore: 2,     // Low Fake (It's still human)
+      status: 'UNCERTAIN',
+      statusColor: 'text-yellow-400',
+      barColor: '#facc15', 
     },
     {
-      label: 'Likely deepfake',
-      color: 'bg-shield-amber',
-      textColor: 'text-shield-amber',
-      matchScore: 12,
-      deepfakeScore: 88,
+      label: 'Voice Clone',
+      matchScore: 96,       // High Match (The clone is good!)
+      deepfakeScore: 99,    // High Fake (But we detected artifacts)
       status: 'HIGH RISK',
+      statusColor: 'text-red-500',
+      barColor: '#ef4444', 
     },
   ];
 
   const currentScenario = scenarios[riskLevel];
 
   return (
-    <section className="py-24 bg-shield-bg border-y border-white/5">
-      <div className="container mx-auto px-6">
+    <section className="py-24 bg-slate-950 border-t border-slate-900">
+      <div className="container mx-auto px-4">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
+          
+          {/* Controls */}
           <div>
-            <h2 className="text-3xl md:text-4xl font-bold text-shield-text mb-6 font-heading">
-              See how risk changes in real time
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+              See the risk engine in action
             </h2>
-            <p className="text-shield-text-secondary mb-12 text-lg">
-              Adjust the slider to simulate different call scenarios and see how CallShield responds instantly.
+            <p className="text-slate-400 mb-12 text-lg">
+              Adjust the slider to simulate different call vectors. Note how Voice Match and Deepfake Detection operate independently.
             </p>
 
-            <div className="space-y-8">
+            <div className="space-y-8 bg-slate-900/50 p-8 rounded-2xl border border-slate-800">
               <div>
-                <label className="text-sm font-medium text-shield-text mb-4 block">
-                  Call risk scenario
+                <label className="text-sm font-medium text-white mb-4 block uppercase tracking-wider">
+                  Simulation Scenario
                 </label>
                 <input
                   type="range"
@@ -60,46 +62,47 @@ export default function RiskSimulator() {
                   step="1"
                   value={riskLevel}
                   onChange={(e) => setRiskLevel(parseInt(e.target.value))}
-                  className="w-full h-2 bg-shield-surface-highlight rounded-lg appearance-none cursor-pointer accent-shield-blue focus:outline-none focus:ring-2 focus:ring-shield-blue/50"
+                  className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
                 />
-                <div className="flex justify-between mt-2 text-xs text-shield-text-secondary font-mono uppercase">
-                  <span>Trusted</span>
-                  <span>Uncertain</span>
-                  <span>Deepfake</span>
+                <div className="flex justify-between mt-4 text-xs text-slate-500 font-mono uppercase">
+                  <span className={riskLevel === 0 ? "text-emerald-400 font-bold" : ""}>Trusted</span>
+                  <span className={riskLevel === 1 ? "text-yellow-400 font-bold" : ""}>Low Quality</span>
+                  <span className={riskLevel === 2 ? "text-red-500 font-bold" : ""}>Clone Attack</span>
                 </div>
               </div>
             </div>
           </div>
 
+          {/* Visualization Card */}
           <motion.div
             animate={riskLevel === 2 ? { x: [-2, 2, -2, 2, 0] } : {}}
             transition={{ duration: 0.4 }}
-            className="bg-shield-surface border border-white/5 rounded-xl p-8 shadow-2xl relative overflow-hidden"
+            className="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl relative overflow-hidden"
           >
-            <div className="flex items-center justify-between mb-8">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-8 border-b border-slate-800 pb-4">
               <div className="flex flex-col">
-                <span className="text-sm text-shield-text-secondary mb-1">Analysis Status</span>
+                <span className="text-xs text-slate-500 uppercase tracking-wider mb-1">Status</span>
                 <motion.span
                   key={currentScenario.status}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={cn("text-xl font-bold font-mono", currentScenario.textColor)}
+                  className={cn("text-2xl font-bold font-mono", currentScenario.statusColor)}
                 >
                   {currentScenario.status}
                 </motion.span>
               </div>
               {riskLevel === 2 && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="w-3 h-3 rounded-full bg-shield-amber animate-ping"
-                />
+                <div className="flex items-center gap-2 px-3 py-1 bg-red-500/10 border border-red-500/20 rounded-full">
+                   <div className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+                   <span className="text-xs font-bold text-red-500">AI DETECTED</span>
+                </div>
               )}
             </div>
 
-            <div className="flex gap-8 h-64">
-              {/* Trust Meter */}
-              <div className="flex-1 flex flex-col justify-end gap-1 bg-shield-surface-highlight/30 rounded-lg p-1 relative overflow-hidden">
+            <div className="flex gap-8 h-48">
+              {/* Voice Match Meter */}
+              <div className="flex-1 flex flex-col justify-end gap-1 bg-slate-950/50 rounded-lg p-2 border border-slate-800">
                 {[...Array(20)].map((_, i) => {
                   const isActive = i < (currentScenario.matchScore / 5);
                   return (
@@ -107,38 +110,37 @@ export default function RiskSimulator() {
                       key={i}
                       initial={false}
                       animate={{
-                        backgroundColor: isActive 
-                          ? riskLevel === 2 ? '#FFB55A' : riskLevel === 1 ? '#3BA4FF' : '#4BF2C0'
-                          : 'rgba(255,255,255,0.05)',
+                        backgroundColor: isActive ? currentScenario.barColor : '#1e293b',
                         opacity: isActive ? 1 : 0.3
                       }}
-                      transition={{ duration: 0.3, delay: (20 - i) * 0.02 }}
+                      transition={{ duration: 0.3, delay: (20 - i) * 0.01 }}
                       className="w-full h-full rounded-sm"
                     />
                   );
                 })}
               </div>
 
+              {/* Stats */}
               <div className="flex-1 flex flex-col justify-center gap-6">
                 <div>
-                  <p className="text-sm text-shield-text-secondary mb-1">Voiceprint Match</p>
+                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Voiceprint Match</p>
                   <motion.p
                     key={currentScenario.matchScore}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="text-3xl font-mono font-bold text-shield-text"
+                    className="text-4xl font-mono font-bold text-white"
                   >
                     {currentScenario.matchScore}%
                   </motion.p>
                 </div>
                 <div>
-                  <p className="text-sm text-shield-text-secondary mb-1">Deepfake Likelihood</p>
+                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Deepfake Prob</p>
                   <motion.p
                     key={currentScenario.deepfakeScore}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className={cn("text-3xl font-mono font-bold", 
-                      riskLevel === 2 ? "text-shield-amber" : "text-shield-text"
+                    className={cn("text-4xl font-mono font-bold", 
+                      riskLevel === 2 ? "text-red-500" : "text-slate-400"
                     )}
                   >
                     {currentScenario.deepfakeScore}%
