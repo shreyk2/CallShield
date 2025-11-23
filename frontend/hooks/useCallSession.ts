@@ -39,7 +39,6 @@ export const useCallSession = () => {
       const ws = new WebSocket(wsUrl);
       
       ws.onopen = () => {
-        console.log('WebSocket connected');
         setIsConnected(true);
         setSessionStartTime(Date.now());
         // 3. Start Audio Capture only after WS is open
@@ -47,18 +46,17 @@ export const useCallSession = () => {
       };
 
       ws.onclose = () => {
-        console.log('WebSocket disconnected');
         setIsConnected(false);
       };
 
       ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
+        // Silent error
       };
 
       wsRef.current = ws;
 
     } catch (error) {
-      console.error('Failed to start call:', error);
+      // Silent error
     }
   };
 
@@ -87,7 +85,7 @@ export const useCallSession = () => {
         const risk = await apiService.getSessionRisk(sessionId);
         setRiskStatus(risk);
       } catch (error) {
-        console.error('Failed to fetch risk status:', error);
+        // Silent error
       }
     }, 1000);
 

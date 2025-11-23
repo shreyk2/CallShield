@@ -25,7 +25,17 @@ export const useRiskPolling = (sessionId: string | null) => {
         const statusResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/sessions/${sessionId}/status`);
         
         if (!statusResponse.ok) {
-          throw new Error('Session not found');
+          if (statusResponse.status === 404) {
+            setIsSessionActive(false);
+            setSessionStatus(null);
+            setRiskScore(null);
+            if (intervalRef.current) {
+              clearInterval(intervalRef.current);
+              intervalRef.current = null;
+            }
+            return;
+          }
+          throw new Error('Failed to fetch session status');
         }
         
         const statusData: SessionStatus = await statusResponse.json();
@@ -33,7 +43,6 @@ export const useRiskPolling = (sessionId: string | null) => {
         
         // If session is no longer active, stop polling
         if (!statusData.active) {
-          console.log('Session inactive, stopping poll');
           setIsSessionActive(false);
           if (intervalRef.current) {
             clearInterval(intervalRef.current);
@@ -44,10 +53,23 @@ export const useRiskPolling = (sessionId: string | null) => {
 
         // Fetch risk data
         const data = await apiService.getSessionRisk(sessionId);
+        
+        // Only log if we have new Social Engineering data from OpenAI
+        if (data.se_risk_level && data.se_risk_level !== 'SAFE') {
+           console.group('🚨 OpenAI Social Engineering Detection');
+           console.log('Risk Level:', data.se_risk_level);
+           console.log('Score:', data.se_risk_score);
+           console.log('Reason:', data.se_reason);
+           console.log('Flagged Phrases:', data.se_flagged_phrases);
+           console.groupEnd();
+        } else if (data.se_risk_level) {
+           // Log safe checks occasionally or just debug
+           // console.log('OpenAI Check: Safe');
+        }
+
         setRiskScore(data);
         setError(null);
       } catch (err) {
-        console.error('Error polling risk data:', err);
         setError('Failed to fetch risk data');
         // Stop polling on error
         if (intervalRef.current) {

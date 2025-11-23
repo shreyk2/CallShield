@@ -31,10 +31,8 @@ export const useAgentAudio = (
     const fetchScript = async () => {
       try {
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-        console.log('[Agent Audio] Fetching script from:', `${baseUrl}/agent/script`);
         const response = await fetch(`${baseUrl}/agent/script`);
         const data = await response.json();
-        console.log('[Agent Audio] Script loaded:', data);
         setAgentScript(data.script);
         setWindows(data.windows);
       } catch (error) {
@@ -67,7 +65,6 @@ export const useAgentAudio = (
       const currentWindow = windows.find(w => w.start <= elapsed && elapsed < w.end);
       
       if (!currentWindow) {
-        console.log('[Agent Audio] No current window found for elapsed time:', elapsed);
         return;
       }
 
@@ -77,7 +74,6 @@ export const useAgentAudio = (
         currentWindowRef.current.segment_index !== currentWindow.segment_index;
 
       if (windowChanged) {
-        console.log('[Agent Audio] Window changed at', elapsed.toFixed(1), 's:', currentWindow);
         currentWindowRef.current = currentWindow;
       }
 
@@ -86,20 +82,17 @@ export const useAgentAudio = (
         
         // Mute microphone to backend during agent time
         if (setShouldSendAudio) {
-          console.log('[Agent Audio] Muting mic - agent speaking');
           setShouldSendAudio(false);
         }
         
         // If this is a new segment, play the audio
         if (currentWindow.segment_index !== currentSegment) {
-          console.log('[Agent Audio] Playing new segment:', currentWindow.segment_index);
           setCurrentSegment(currentWindow.segment_index);
           playAgentAudio(currentWindow.segment_index, currentWindow.end - elapsed);
         }
       } else {
         // Caller time - stop agent audio immediately if still playing
         if (audioRef.current && !audioRef.current.paused) {
-          console.log('[Agent Audio] Stopping agent audio - caller time started at', elapsed.toFixed(1), 's');
           audioRef.current.pause();
           audioRef.current.currentTime = 0;
           audioRef.current = null;
@@ -109,7 +102,6 @@ export const useAgentAudio = (
         
         // Unmute microphone for caller time
         if (setShouldSendAudio) {
-          console.log('[Agent Audio] Unmuting mic - caller time at', elapsed.toFixed(1), 's');
           setShouldSendAudio(true);
         }
       }
@@ -134,8 +126,6 @@ export const useAgentAudio = (
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
       const audioUrl = `${baseUrl}/agent/audio/${segmentIndex}?format=mp3`;
       
-      console.log(`[Agent Audio] Playing segment ${segmentIndex}, max duration: ${maxDuration?.toFixed(1)}s`);
-      
       // Stop any currently playing audio
       if (audioRef.current) {
         audioRef.current.pause();
@@ -147,16 +137,12 @@ export const useAgentAudio = (
       audioRef.current = audio;
 
       // Add event listeners
-      audio.onloadstart = () => console.log(`[Agent Audio] Loading segment ${segmentIndex}...`);
-      audio.oncanplay = () => console.log(`[Agent Audio] Segment ${segmentIndex} ready, duration: ${audio.duration.toFixed(1)}s`);
       audio.onerror = (e) => console.error(`[Agent Audio] Error loading segment ${segmentIndex}:`, e);
-      audio.onended = () => console.log(`[Agent Audio] Segment ${segmentIndex} finished playing`);
 
       // Set a timer to stop audio if it exceeds the window duration
       if (maxDuration) {
         setTimeout(() => {
           if (audioRef.current === audio && !audio.paused) {
-            console.log(`[Agent Audio] Forcing stop of segment ${segmentIndex} after ${maxDuration.toFixed(1)}s`);
             audio.pause();
             audio.currentTime = 0;
           }
@@ -165,7 +151,6 @@ export const useAgentAudio = (
 
       // Play the audio
       await audio.play();
-      console.log(`[Agent Audio] Started playing segment ${segmentIndex}`);
 
     } catch (error) {
       console.error(`[Agent Audio] Failed to play segment ${segmentIndex}:`, error);

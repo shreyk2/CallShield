@@ -1,10 +1,12 @@
 """Application configuration"""
-from pydantic_settings import BaseSettings
 from functools import lru_cache
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """Application settings"""
+    model_config = SettingsConfigDict(env_file=".env", extra="allow", case_sensitive=False)
     
     # Application
     app_name: str = "CallShield"
@@ -45,6 +47,12 @@ class Settings(BaseSettings):
     fish_audio_api_key: str = ""
     fish_audio_model: str = "fish-speech-1.5"
     fish_audio_reference_id: str = ""  # Optional: for voice cloning
+
+    # OpenAI (for Whisper transcription)
+    openai_api_key: str = ""
+    
+    # Google Gemini (for social engineering analysis)
+    gemini_api_key: str = ""
     
     # Session management
     max_sessions: int = 100
@@ -55,10 +63,6 @@ class Settings(BaseSettings):
     enrollments_dir: str = "../data/enrollments"
     embeddings_dir: str = "../data/embeddings"
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
-
 
 @lru_cache()
 def get_settings() -> Settings:

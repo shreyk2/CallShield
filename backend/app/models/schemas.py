@@ -29,6 +29,12 @@ class RiskResponse(BaseModel):
     fake_score: int = Field(ge=0, le=100, description="AI synthetic likelihood (0-100)")
     status: RiskStatus = Field(description="Overall risk status")
     status_reason: str = Field(description="Explanation of risk assessment")
+    
+    # Social Engineering
+    se_risk_score: int = Field(default=0, ge=0, le=100, description="Social engineering risk score (0-100)")
+    se_risk_level: str = Field(default="SAFE", description="Social engineering risk level")
+    se_flagged_phrases: list[str] = Field(default=[], description="Suspicious phrases detected")
+    se_reason: str = Field(default="", description="Reason for social engineering flag")
 
 
 class ErrorResponse(BaseModel):

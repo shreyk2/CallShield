@@ -12,6 +12,10 @@ export interface RiskResponse {
   status: RiskLevel;
   status_reason: string;
   num_verifications?: number;
+  se_risk_score?: number;
+  se_risk_level?: string;
+  se_flagged_phrases?: string[];
+  se_reason?: string;
 }
 
 export interface SessionStatus {

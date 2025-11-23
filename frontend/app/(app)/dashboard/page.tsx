@@ -152,7 +152,6 @@ export default function DashboardPage() {
   useEffect(() => {
     if (fraudRisk > 0 && !hasAICheckReturned) {
       setHasAICheckReturned(true);
-      console.log('✅ First AI check returned with fraudRisk:', fraudRisk);
     }
   }, [fraudRisk, hasAICheckReturned]);
   
@@ -547,46 +546,61 @@ export default function DashboardPage() {
                 )}
               </div>
 
-              {/* Auth Log */}
+              {/* Social Engineering Results */}
               <div className="space-y-3 pt-2">
-                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Authentication Log</h4>
-                <div className="space-y-3 text-sm">
-                  <div className="flex gap-3">
-                    <div className="mt-1"><CheckCircle2 className="h-4 w-4 text-green-500" /></div>
-                    <div>
-                      <div className="font-medium text-slate-200">IVR Authentication Success</div>
-                      <div className="text-xs text-slate-500">10:38 PM • DOB/SSN Verified</div>
-                    </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <div className="mt-1"><CheckCircle2 className="h-4 w-4 text-green-500" /></div>
-                    <div>
-                      <div className="font-medium text-slate-200">Email Verification Success</div>
-                      <div className="text-xs text-slate-500">08:45 AM • 2FA Code Verified</div>
-                    </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <div className="mt-1"><XCircle className="h-4 w-4 text-red-500" /></div>
-                    <div>
-                      <div className="font-medium text-slate-200">Mobile Login Failure</div>
-                      <div className="text-xs text-slate-500">09:15 AM • Incorrect Password</div>
-                    </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <div className="mt-1"><AlertTriangle className="h-4 w-4 text-yellow-500" /></div>
-                    <div>
-                      <div className="font-medium text-slate-200">Large Purchase Alert</div>
-                      <div className="text-xs text-slate-500">Yesterday • Overridden by User</div>
-                    </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <div className="mt-1"><CheckCircle2 className="h-4 w-4 text-green-500" /></div>
-                    <div>
-                      <div className="font-medium text-slate-200">Card PIN Changed</div>
-                      <div className="text-xs text-slate-500">2 Days Ago • Online Banking</div>
-                    </div>
-                  </div>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Social Engineering Results</h4>
+                  {riskScore?.se_risk_level && (
+                    <Badge variant={riskScore.se_risk_level === 'SAFE' ? 'outline' : 'destructive'} className="text-[10px]">
+                      {riskScore.se_risk_level}
+                    </Badge>
+                  )}
                 </div>
+                
+                {!riskScore?.se_risk_level ? (
+                   <div className="text-sm text-slate-500 italic py-2">Waiting for analysis...</div>
+                ) : (
+                  <div className="space-y-3 text-sm">
+                    {/* Risk Score */}
+                    <div className="flex justify-between items-center p-2 bg-slate-950 rounded border border-slate-800">
+                       <span className="text-slate-400">Threat Score</span>
+                       <span className={cn(
+                         "font-mono font-bold",
+                         (riskScore.se_risk_score || 0) > 50 ? "text-red-400" : "text-green-400"
+                       )}>
+                         {riskScore.se_risk_score || 0}/100
+                       </span>
+                    </div>
+
+                    {/* Reason */}
+                    {riskScore.se_reason && (
+                      <div className="text-xs text-slate-400 bg-slate-950/50 p-2 rounded">
+                        {riskScore.se_reason}
+                      </div>
+                    )}
+
+                    {/* Flagged Phrases */}
+                    {riskScore.se_flagged_phrases && riskScore.se_flagged_phrases.length > 0 ? (
+                      <div className="space-y-2">
+                        <div className="text-xs font-medium text-red-400 flex items-center gap-2">
+                          <AlertTriangle className="h-3 w-3" /> Suspicious Phrases Detected
+                        </div>
+                        <ul className="space-y-2">
+                          {riskScore.se_flagged_phrases.map((phrase, i) => (
+                            <li key={i} className="text-xs bg-red-500/10 text-red-200 p-2 rounded border border-red-500/20 italic">
+                              "{phrase}"
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-green-400 text-xs bg-green-500/10 p-2 rounded border border-green-500/20">
+                        <CheckCircle2 className="h-3 w-3" />
+                        No suspicious patterns detected
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
             </CardContent>

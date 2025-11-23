@@ -59,6 +59,38 @@ export const RiskWidget = ({ riskScore }: RiskWidgetProps) => {
              Reason: {riskScore.status_reason}
            </div>
         )}
+
+        {/* Social Engineering Section */}
+        {riskScore.se_risk_level && (
+          <div className="mt-6 border-t pt-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium">Social Engineering Detector</h3>
+              <Badge variant={riskScore.se_risk_level === 'SAFE' ? 'outline' : 'destructive'}>
+                {riskScore.se_risk_level}
+              </Badge>
+            </div>
+            
+            {riskScore.se_flagged_phrases && riskScore.se_flagged_phrases.length > 0 ? (
+              <div className="space-y-2">
+                <div className="text-xs font-medium text-red-500">Flagged Phrases:</div>
+                <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-1">
+                  {riskScore.se_flagged_phrases.map((phrase, i) => (
+                    <li key={i}>"{phrase}"</li>
+                  ))}
+                </ul>
+                {riskScore.se_reason && (
+                  <div className="text-xs mt-2 italic">
+                    Analysis: {riskScore.se_reason}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-xs text-muted-foreground">
+                No suspicious patterns detected in recent speech.
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

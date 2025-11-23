@@ -62,11 +62,22 @@ async def get_risk(session_id: str):
     match_score = risk_engine.normalize_to_100(mean_match)
     fake_score = risk_engine.normalize_to_100(mean_fake)
     
+    # Get latest SE result
+    se_result = session.se_results[-1] if session.se_results else None
+    se_risk_score = se_result["risk_score"] if se_result else 0
+    se_risk_level = se_result["risk_level"] if se_result else "SAFE"
+    se_flagged_phrases = se_result["flagged_phrases"] if se_result else []
+    se_reason = se_result["reason"] if se_result else ""
+    
     return RiskResponse(
         match_score=match_score,
         fake_score=fake_score,
         status=status,
         status_reason=reason,
+        se_risk_score=se_risk_score,
+        se_risk_level=se_risk_level,
+        se_flagged_phrases=se_flagged_phrases,
+        se_reason=se_reason
     )
 
 

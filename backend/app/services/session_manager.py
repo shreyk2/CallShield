@@ -18,6 +18,7 @@ class Session:
     # Analysis results
     match_scores: list[float] = field(default_factory=list)  # Voice similarity scores
     fake_scores: list[float] = field(default_factory=list)  # Deepfake probabilities
+    se_results: list[dict] = field(default_factory=list)  # Social engineering results
     # Metadata
     elapsed_time: float = 0.0
     active: bool = True
@@ -93,6 +94,13 @@ class SessionManager:
             session = self._sessions.get(session_id)
             if session:
                 session.fake_scores.append(score)
+    
+    def append_se_result(self, session_id: str, result: dict) -> None:
+        """Append social engineering result to list"""
+        with self._lock:
+            session = self._sessions.get(session_id)
+            if session:
+                session.se_results.append(result)
     
     def close_session(self, session_id: str) -> None:
         """Mark session as inactive"""
