@@ -4,19 +4,16 @@ import React, { useState, useEffect } from 'react';
 import { useCallSession } from '@/hooks/useCallSession';
 import { useAgentAudio } from '@/hooks/useAgentAudio';
 import { Button } from "@/components/ui/button";
-import { Phone, PhoneOff, Mic, MicOff, MoreVertical, Grid3x3, Volume2, Grid } from "lucide-react";
+import { Phone, PhoneOff, Mic, MicOff, Grid3x3, Volume2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function CallPage() {
-  // We still destructure riskStatus to prevent errors, but we deliberately DO NOT display it
   const { sessionId, isRecording, startCall, endCall, sessionStartTime, setShouldSendAudio } = useCallSession();
   const { isAgentSpeaking, currentText } = useAgentAudio(isRecording, sessionStartTime, setShouldSendAudio);
   
   const [duration, setDuration] = useState(0);
-  const [isMuted, setIsMuted] = useState(false); // Visual state only for demo realism
+  const [isMuted, setIsMuted] = useState(false);
 
-  // Timer logic
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isRecording) {
@@ -35,7 +32,6 @@ export default function CallPage() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Fake audio visualizer bars
   const AudioBars = () => (
     <div className="flex items-center justify-center gap-1 h-12">
       {[...Array(5)].map((_, i) => (
@@ -55,36 +51,43 @@ export default function CallPage() {
   );
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-b from-slate-900 to-slate-950 flex flex-col items-center justify-between py-12 px-4 text-white overflow-hidden font-sans">
+    // UPDATED WRAPPER: 
+    // - w-full: Takes full width of the parent container
+    // - min-h-[...]: Calculates height to fit screen minus header (approx 140px)
+    // - rounded-3xl: Gives it a modern "App within an App" look
+    <div className="w-full min-h-[calc(100vh-140px)] bg-gradient-to-b from-slate-900 to-slate-950 flex flex-col items-center justify-between py-8 px-4 text-white overflow-hidden font-sans rounded-3xl shadow-2xl border border-slate-800 relative">
       
-      {/* Top Bar (Mock Status) */}
+      {/* Top Bar */}
       <div className="w-full max-w-md flex justify-between items-center opacity-50 text-xs mb-4">
-        <span>Secure Channel</span>
         <div className="flex items-center gap-1">
-          <div className="w-2 h-2 bg-green-500 rounded-full" />
-          <span>Encrypted</span>
+          {/* Empty top bar for now, as requested in previous iteration */}
         </div>
       </div>
 
-      {/* Main Caller Info Area */}
+      {/* Main Caller Info */}
       <div className="flex-1 flex flex-col items-center justify-center w-full max-w-md space-y-8 animate-in fade-in duration-700">
         
-        {/* Bank/Agent Avatar */}
+        {/* Avatar Placeholder - UPDATED WITH LOGO */}
         <div className="relative">
+          {/* The glowing ring effect when call is active */}
           <div className={cn(
             "absolute -inset-4 bg-blue-500/20 rounded-full blur-xl transition-opacity duration-1000",
             isRecording ? "opacity-100" : "opacity-0"
           )} />
-          <Avatar className="h-32 w-32 border-4 border-slate-800 shadow-2xl">
-            <AvatarImage src="/bank-logo-placeholder.png" alt="Bank" />
-            <AvatarFallback className="bg-slate-800 text-3xl font-light text-white">
-              CB
-            </AvatarFallback>
-          </Avatar>
+          
+          {/* The circle container */}
+          <div className="h-32 w-32 rounded-full border-4 border-slate-800 shadow-2xl overflow-hidden bg-slate-900 flex items-center justify-center relative z-10 p-4">
+             {/* REPLACED TEXT SPAN WITH IMAGE URL */}
+             <img 
+               src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Capital_One_logo.svg/2560px-Capital_One_logo.svg.png" 
+               alt="Capital One Logo"
+               className="w-full h-auto object-contain brightness-200"
+             />
+          </div>
         </div>
 
         <div className="text-center space-y-2">
-          <h2 className="text-3xl font-semibold tracking-tight">Chase Bank Support</h2>
+          <h2 className="text-3xl font-semibold tracking-tight">Capital One Bank Support</h2>
           <p className="text-slate-400 text-lg font-light">
             {isRecording ? "Call in progress..." : "Ready to connect"}
           </p>
@@ -102,7 +105,7 @@ export default function CallPage() {
           )}
         </div>
 
-        {/* Dynamic Captions (Agent Speech) */}
+        {/* Captions */}
         <div className="h-24 flex items-center justify-center w-full px-6">
           {isAgentSpeaking && currentText && (
             <div className="bg-black/40 backdrop-blur-md text-white/90 px-6 py-3 rounded-2xl text-center text-sm leading-relaxed shadow-lg border border-white/5 animate-in slide-in-from-bottom-2">
@@ -112,13 +115,13 @@ export default function CallPage() {
         </div>
       </div>
 
-      {/* Control Grid (iOS Style) */}
+      {/* Controls */}
       <div className="w-full max-w-md space-y-8 mb-8">
         
-        {/* Secondary Actions (Visual Only for Demo) */}
+        {/* Secondary Actions */}
         <div className={cn(
             "grid grid-cols-3 gap-4 transition-opacity duration-500",
-            isRecording ? "opacity-100 pointer-events-auto" : "opacity-30 pointer-events-none"
+            isRecording ? "opacity-100 pointer-events-auto" : "opacity-70 pointer-events-none"
           )}>
             <Button variant="ghost" className="flex flex-col h-auto gap-2 text-white hover:bg-white/10 hover:text-white">
               <div className="p-4 rounded-full bg-slate-800/50 backdrop-blur-sm">
@@ -137,10 +140,7 @@ export default function CallPage() {
             <Button 
               variant="ghost" 
               onClick={() => setIsMuted(!isMuted)}
-              className={cn(
-                "flex flex-col h-auto gap-2 hover:bg-white/10 hover:text-white",
-                isMuted ? "text-white" : "text-white"
-              )}
+              className="flex flex-col h-auto gap-2 text-white hover:bg-white/10 hover:text-white"
             >
               <div className={cn(
                 "p-4 rounded-full backdrop-blur-sm transition-colors",
@@ -152,7 +152,7 @@ export default function CallPage() {
             </Button>
         </div>
 
-        {/* Primary Action (Call/End) */}
+        {/* Main Action */}
         <div className="flex justify-center pb-8">
           {!isRecording ? (
             <Button
@@ -172,7 +172,7 @@ export default function CallPage() {
         </div>
       </div>
 
-      {/* Session ID Footer */}
+      {/* Footer */}
       <div className="text-[10px] text-slate-600 font-mono uppercase tracking-widest">
         Session: {sessionId || "Waiting..."}
       </div>
