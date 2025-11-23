@@ -13,9 +13,8 @@ audio_processor = AudioProcessor()
 voice_embedding = get_voice_embedding()
 settings = get_settings()
 deepfake_detector = DeepfakeDetector(
-    api_url=settings.deepfake_api_url,
-    api_key=settings.deepfake_api_key,
-    user_id=settings.deepfake_user_id
+    api_url=settings.aurigin_api_url,
+    api_key=settings.aurigin_api_key
 )
 
 

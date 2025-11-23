@@ -26,11 +26,15 @@ class Settings(BaseSettings):
     embedding_model: str = "speechbrain/spkrec-ecapa-voxceleb"
     match_threshold: float = 0.8  # Cosine similarity threshold for SAFE
     
-    # Deepfake detection
+    # Deepfake detection - Aurigin.AI (active)
     fake_threshold: float = 0.2  # Probability threshold for SAFE
-    deepfake_api_url: str = "https://ai-audio-detect.undetectable.ai"
-    deepfake_api_key: str = ""
-    deepfake_user_id: str = ""
+    aurigin_api_url: str = "https://aurigin.ai/api-ext"
+    aurigin_api_key: str = ""
+    
+    # Deepfake detection - Undetectable.AI (backup)
+    undetectable_api_url: str = ""
+    undetectable_api_key: str = ""
+    undetectable_user_id: str = ""
     
     # Session management
     max_sessions: int = 100

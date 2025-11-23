@@ -1,4 +1,4 @@
-"""Test deepfake detection with Undetectable.AI - Measure timing"""
+"""Test deepfake detection with Aurigin.AI - Measure timing"""
 import asyncio
 import time
 from pathlib import Path
@@ -7,26 +7,25 @@ from app.config import get_settings
 
 async def test_deepfake():
     print("=" * 60)
-    print("Testing Deepfake Detection - Performance Measurement")
+    print("Testing Aurigin.AI Deepfake Detection")
     print("=" * 60)
     
     settings = get_settings()
     
     # Check if API credentials are configured
-    if not settings.deepfake_api_key or not settings.deepfake_user_id:
+    if not settings.aurigin_api_key:
         print("\n⚠ No API credentials found in .env")
-        print("  Add DEEPFAKE_API_KEY and DEEPFAKE_USER_ID to test real detection")
+        print("  Add AURIGIN_API_KEY to test real detection")
         print("\n  Will use stub mode (returns fake_score=0.0)")
         return
     else:
-        print(f"\n✓ API URL: {settings.deepfake_api_url}")
-        print(f"✓ User ID: {settings.deepfake_user_id[:8]}...")
+        print(f"\n✓ API URL: {settings.aurigin_api_url}")
+        print(f"✓ API Key: {settings.aurigin_api_key[:8]}...")
     
     # Initialize detector
     detector = DeepfakeDetector(
-        api_url=settings.deepfake_api_url,
-        api_key=settings.deepfake_api_key,
-        user_id=settings.deepfake_user_id
+        api_url=settings.aurigin_api_url,
+        api_key=settings.aurigin_api_key
     )
     
     # Find test audio
