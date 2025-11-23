@@ -8,8 +8,17 @@ import { Phone, PhoneOff, Mic, ShieldAlert, ShieldCheck, ShieldQuestion, Activit
 import { cn } from "@/lib/utils";
 
 export default function CallPage() {
-  // Hardcoded user for demo purposes
-  const { isRecording, startCall, endCall, riskStatus } = useCallSession('jcena123');
+  // Retrieve user from session storage, default to demo user if not found
+  const [username, setUsername] = useState<string>('jcena123');
+
+  useEffect(() => {
+    const stored = sessionStorage.getItem("callshield_username");
+    if (stored) {
+      setUsername(stored);
+    }
+  }, []);
+
+  const { isRecording, startCall, endCall, riskStatus } = useCallSession(username);
   const [duration, setDuration] = useState(0);
 
   // Timer logic

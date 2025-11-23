@@ -25,6 +25,12 @@ export default function EnrollmentPage() {
     setIsSaving(true);
     try {
       await apiService.enrollUser(username, fullName, audioBlob);
+      
+      // Save to session storage for the UI
+      sessionStorage.setItem("callshield_username", username);
+      // Dispatch event so Header updates immediately
+      window.dispatchEvent(new Event("user_session_updated"));
+
       alert('Enrollment successful!');
       setFullName('');
       setUsername('');

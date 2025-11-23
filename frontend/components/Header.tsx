@@ -2,12 +2,28 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Shield } from "lucide-react";
+import { Shield, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
 
 export function Header() {
   const pathname = usePathname();
+  const [username, setUsername] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkUser = () => {
+      const stored = sessionStorage.getItem("callshield_username");
+      setUsername(stored);
+    };
+
+    // Check on mount
+    checkUser();
+
+    // Listen for updates from Enrollment page
+    window.addEventListener("user_session_updated", checkUser);
+    return () => window.removeEventListener("user_session_updated", checkUser);
+  }, []);
 
   const routes = [
     {
@@ -57,7 +73,7 @@ export function Header() {
             ))}
           </nav>
         </div>
-        <div className="flex flex-1 items-center justify-end space-x-2">
+        <div className="flex flex-1 items-center justify-end space-x-4">
           <nav className="flex items-center">
             <Button asChild variant="ghost" size="sm">
               <Link
@@ -69,6 +85,17 @@ export function Header() {
               </Link>
             </Button>
           </nav>
+          
+          {username && (
+            <div className="flex items-center gap-2 pl-4 border-l border-border">
+              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <User className="w-4 h-4 text-primary" />
+              </div>
+              <span className="text-sm font-medium hidden sm:inline-block">
+                {username}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </header>
