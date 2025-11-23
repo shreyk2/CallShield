@@ -86,6 +86,7 @@ export const useAgentAudio = (
         
         // Mute microphone to backend during agent time
         if (setShouldSendAudio) {
+          console.log('[Agent Audio] Muting mic - agent speaking');
           setShouldSendAudio(false);
         }
         
@@ -108,6 +109,7 @@ export const useAgentAudio = (
         
         // Unmute microphone for caller time
         if (setShouldSendAudio) {
+          console.log('[Agent Audio] Unmuting mic - caller time at', elapsed.toFixed(1), 's');
           setShouldSendAudio(true);
         }
       }

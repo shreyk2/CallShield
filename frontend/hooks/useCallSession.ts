@@ -14,8 +14,10 @@ export const useCallSession = () => {
 
   // Callback for audio data - only send when it's caller time
   const handleAudioData = useCallback((data: Int16Array) => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && shouldSendAudio) {
-      wsRef.current.send(data.buffer);
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      if (shouldSendAudio) {
+        wsRef.current.send(data.buffer);
+      }
     }
   }, [shouldSendAudio]);
 

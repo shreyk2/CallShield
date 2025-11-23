@@ -26,7 +26,9 @@ import {
   XCircle,
   Mic,
   BrainCircuit,
-  Siren
+  Siren,
+  Mail,
+  Hash
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -35,6 +37,9 @@ export default function DashboardPage() {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [isAutoLoaded, setIsAutoLoaded] = useState(false);
   const [callDuration, setCallDuration] = useState(0);
+  const [showAIAlert, setShowAIAlert] = useState(false);
+  const [hasShownAIAlert, setHasShownAIAlert] = useState(false);
+  const [hasAICheckReturned, setHasAICheckReturned] = useState(false);
 
   useEffect(() => {
     // Check for active session from Call page
@@ -125,13 +130,70 @@ export default function DashboardPage() {
   }, [activeSessionId, sessionStatus?.start_time]);
 
   // Derived state for UI
-  const isAuthenticated = riskScore?.status === 'SAFE';
   const voiceMatch = riskScore?.match_score ?? 0;
   const fraudRisk = riskScore?.fake_score ?? 0;
+
+  // Show modal when fraud risk exceeds 50% (only once per session)
+  useEffect(() => {
+    if (fraudRisk > 50 && !hasShownAIAlert && activeSessionId) {
+      setShowAIAlert(true);
+      setHasShownAIAlert(true);
+    }
+  }, [fraudRisk, hasShownAIAlert, activeSessionId]);
+
+  // Reset alert state when session changes
+  useEffect(() => {
+    setHasShownAIAlert(false);
+    setShowAIAlert(false);
+    setHasAICheckReturned(false);
+  }, [activeSessionId]);
+
+  // Track when first AI check returns (fraudRisk > 0 means AI detection has run)
+  useEffect(() => {
+    if (fraudRisk > 0 && !hasAICheckReturned) {
+      setHasAICheckReturned(true);
+      console.log('✅ First AI check returned with fraudRisk:', fraudRisk);
+    }
+  }, [fraudRisk, hasAICheckReturned]);
+  
+  // Helper functions for dynamic labels
+  const getVoiceConfidence = () => {
+    if (voiceMatch >= 80) return { label: "High Confidence", color: "text-green-400" };
+    if (voiceMatch >= 50) return { label: "Medium Confidence", color: "text-yellow-400" };
+    return { label: "Low Confidence", color: "text-red-400" };
+  };
+
+  const getFraudRiskLevel = () => {
+    if (fraudRisk >= 50) return { label: "High Risk", color: "text-red-400" };
+    if (fraudRisk >= 20) return { label: "Medium Risk", color: "text-yellow-400" };
+    return { label: "Low Risk", color: "text-green-400" };
+  };
+
+  const getAuthStatus = () => {
+    // Stay yellow until AI check returns
+    if (!riskScore || riskScore.status === 'INITIAL' || !hasAICheckReturned) {
+      return { text: "VERIFYING IDENTITY...", color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", icon: ShieldAlert };
+    }
+    switch (riskScore.status) {
+      case 'HIGH_RISK':
+        return { text: "HIGH RISK DETECTED", color: "bg-red-500/20 text-red-400 border-red-500/30", icon: ShieldAlert };
+      case 'UNCERTAIN':
+        return { text: "VERIFYING IDENTITY...", color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", icon: ShieldAlert };
+      case 'SAFE':
+        return { text: "CLIENT AUTHENTICATED (VOICE ID VERIFIED)", color: "bg-green-500/20 text-green-400 border-green-500/30", icon: ShieldCheck };
+      default:
+        return { text: "VERIFYING IDENTITY...", color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", icon: ShieldAlert };
+    }
+  };
   
   const rawName = sessionStatus?.user_id || "Jane A. Doe";
   // Format name: remove email domain if present
   const customerName = rawName.includes('@') ? rawName.split('@')[0] : rawName;
+  const authStatus = getAuthStatus();
+  const voiceConfidence = getVoiceConfidence();
+  const fraudRiskLevel = getFraudRiskLevel();
+
+
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50 p-6 font-sans">
@@ -173,22 +235,64 @@ export default function DashboardPage() {
 
         {/* Auth Banner */}
         <div className={cn(
-          "px-6 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors duration-500",
-          isAuthenticated ? "bg-green-500/20 text-green-400 border border-green-500/30" : "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+          "px-6 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors duration-500 border",
+          authStatus.color
         )}>
-          {isAuthenticated ? (
-            <>
-              <ShieldCheck className="h-5 w-5" />
-              CLIENT AUTHENTICATED (VOICE ID VERIFIED)
-            </>
-          ) : (
-            <>
-              <ShieldAlert className="h-5 w-5" />
-              VERIFYING IDENTITY...
-            </>
-          )}
+          <authStatus.icon className="h-5 w-5" />
+          {authStatus.text}
         </div>
       </header>
+
+      {/* AI Detection Alert Modal */}
+      {showAIAlert && (
+        <>
+          {/* Backdrop with blur */}
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 animate-in fade-in duration-300"
+            onClick={() => setShowAIAlert(false)}
+          />
+          
+          {/* Modal */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+            <div 
+              className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl max-w-lg w-full pointer-events-auto animate-in zoom-in-95 duration-300"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-10 text-center">
+                {/* Icon */}
+                <div className="flex justify-center mb-6">
+                  <div className="bg-red-500/20 p-6 rounded-full">
+                    <AlertTriangle className="h-16 w-16 text-red-400" />
+                  </div>
+                </div>
+
+                {/* Title */}
+                <h2 className="text-3xl font-bold text-slate-100 mb-6">
+                  High Priority Security Alert
+                </h2>
+
+                {/* Message */}
+                <div className="space-y-6 mb-8">
+                  <p className="text-2xl text-slate-200">
+                    <span className="text-red-400 font-semibold">AI speech patterns detected</span>
+                  </p>
+                  <p className="text-lg text-slate-300">
+                    Please use <span className="font-semibold">stricter identity verification</span>
+                  </p>
+                </div>
+
+                {/* Button */}
+                <Button
+                  onClick={() => setShowAIAlert(false)}
+                  className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 text-xl"
+                >
+                  I Understand
+                </Button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Main Grid Layout */}
       <div className="grid grid-cols-12 gap-6">
@@ -210,10 +314,31 @@ export default function DashboardPage() {
               
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
+                  <Mail className="h-4 w-4 text-slate-500 mt-1" />
+                  <div>
+                    <div className="text-xs text-slate-500 uppercase">Email</div>
+                    <div className="font-medium text-sm">jane.doe@email.com</div>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Phone className="h-4 w-4 text-slate-500 mt-1" />
+                  <div>
+                    <div className="text-xs text-slate-500 uppercase">Phone</div>
+                    <div className="font-medium">(555) 123-4567</div>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
                   <Calendar className="h-4 w-4 text-slate-500 mt-1" />
                   <div>
                     <div className="text-xs text-slate-500 uppercase">Date of Birth</div>
                     <div className="font-medium">05/20/1985</div>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Hash className="h-4 w-4 text-slate-500 mt-1" />
+                  <div>
+                    <div className="text-xs text-slate-500 uppercase">SSN (Last 4)</div>
+                    <div className="font-medium">****-7890</div>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -235,6 +360,12 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Report Fraud Button */}
+          <Button className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-6 shadow-lg shadow-red-900/20">
+            <AlertTriangle className="mr-2 h-5 w-5" />
+            REPORT FRAUD
+          </Button>
         </div>
 
         {/* Center Column: Active Cards & Transactions */}
@@ -338,21 +469,6 @@ export default function DashboardPage() {
         {/* Right Column: Security & Actions */}
         <div className="col-span-12 lg:col-span-3 space-y-6">
           
-          {/* Next Best Action */}
-          <Card className="bg-gradient-to-br from-blue-900/50 to-slate-900 border-blue-500/30 text-slate-50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm uppercase tracking-wider text-blue-400 font-bold flex items-center gap-2">
-                <BrainCircuit className="h-4 w-4" />
-                Next Best Action
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="font-medium leading-relaxed">
-                Verify reason for call, then click <span className="text-red-400 font-bold">'Freeze Card'</span> on Visa 4567.
-              </p>
-            </CardContent>
-          </Card>
-
           {/* Security Section */}
           <Card className="bg-slate-900 border-slate-800 text-slate-50">
             <CardHeader>
@@ -373,11 +489,14 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex items-end gap-2">
                   <span className="text-3xl font-bold text-white">{voiceMatch.toFixed(1)}%</span>
-                  <span className="text-sm text-green-400 mb-1 font-medium">High Confidence</span>
+                  <span className={cn("text-sm mb-1 font-medium", voiceConfidence.color)}>{voiceConfidence.label}</span>
                 </div>
                 <div className="h-2 w-full bg-slate-800 rounded-full mt-2 overflow-hidden">
                   <div 
-                    className="h-full bg-green-500 transition-all duration-1000 ease-out" 
+                    className={cn(
+                      "h-full transition-all duration-1000 ease-out",
+                      voiceMatch >= 80 ? "bg-green-500" : voiceMatch >= 50 ? "bg-yellow-500" : "bg-red-500"
+                    )}
                     style={{ width: `${voiceMatch}%` }}
                   />
                 </div>
@@ -393,12 +512,21 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex items-end gap-2">
                   <span className="text-3xl font-bold text-white">{fraudRisk.toFixed(1)}%</span>
-                  <span className="text-sm text-slate-400 mb-1 font-medium">Low Risk</span>
+                  <span className={cn("text-sm mb-1 font-medium", fraudRiskLevel.color)}>{fraudRiskLevel.label}</span>
                 </div>
                 {/* Mini Bar Graph Visualization */}
                 <div className="flex items-end gap-1 h-8 mt-2">
                   {[20, 35, 15, 45, 10, 5, 3].map((h, i) => (
-                    <div key={i} className="flex-1 bg-slate-800 rounded-sm hover:bg-blue-500/50 transition-colors" style={{ height: `${h}%` }} />
+                    <div 
+                      key={i} 
+                      className={cn(
+                        "flex-1 rounded-sm transition-colors",
+                        fraudRisk >= 50 ? "bg-red-500/50 hover:bg-red-500/70" :
+                        fraudRisk >= 20 ? "bg-yellow-500/50 hover:bg-yellow-500/70" :
+                        "bg-slate-800 hover:bg-blue-500/50"
+                      )}
+                      style={{ height: `${h}%` }} 
+                    />
                   ))}
                 </div>
               </div>
@@ -415,6 +543,13 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <div className="flex gap-3">
+                    <div className="mt-1"><CheckCircle2 className="h-4 w-4 text-green-500" /></div>
+                    <div>
+                      <div className="font-medium text-slate-200">Email Verification Success</div>
+                      <div className="text-xs text-slate-500">08:45 AM • 2FA Code Verified</div>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
                     <div className="mt-1"><XCircle className="h-4 w-4 text-red-500" /></div>
                     <div>
                       <div className="font-medium text-slate-200">Mobile Login Failure</div>
@@ -428,17 +563,18 @@ export default function DashboardPage() {
                       <div className="text-xs text-slate-500">Yesterday • Overridden by User</div>
                     </div>
                   </div>
+                  <div className="flex gap-3">
+                    <div className="mt-1"><CheckCircle2 className="h-4 w-4 text-green-500" /></div>
+                    <div>
+                      <div className="font-medium text-slate-200">Card PIN Changed</div>
+                      <div className="text-xs text-slate-500">2 Days Ago • Online Banking</div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
             </CardContent>
           </Card>
-
-          {/* Quick Action Bar */}
-          <Button className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-6 shadow-lg shadow-red-900/20">
-            <AlertTriangle className="mr-2 h-5 w-5" />
-            REPORT FRAUD
-          </Button>
 
         </div>
       </div>
