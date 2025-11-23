@@ -62,16 +62,11 @@ async def get_risk(session_id: str):
     match_score = risk_engine.normalize_to_100(mean_match)
     fake_score = risk_engine.normalize_to_100(mean_fake)
     
-    # Add num_verifications to response
-    num_match = len(session.match_scores)
-    num_fake = len([s for s in session.fake_scores if s > 0.0])  # Only count real API results
-    
     return RiskResponse(
         match_score=match_score,
         fake_score=fake_score,
         status=status,
         status_reason=reason,
-        num_verifications=num_match,
     )
 
 
