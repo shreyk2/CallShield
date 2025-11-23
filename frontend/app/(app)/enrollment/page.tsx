@@ -15,6 +15,7 @@ import {
   DialogTrigger,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 
 const ENROLLMENT_PROMPTS = [
   "I am enrolling my voice to secure my account. My voice is my unique password that verifies my identity. By speaking this phrase, I authorize the system to create a secure voiceprint for future authentication. This process ensures that only I can access my sensitive information.",
@@ -105,11 +106,7 @@ export default function EnrollmentPage() {
 
         <Dialog open={isDialogOpen} onOpenChange={handleOpenChange}>
           <DialogTrigger asChild>
-            <Button 
-              className="h-12 px-8 text-lg bg-white text-slate-900 hover:bg-slate-200 rounded-full transition-all hover:scale-105"
-            >
-              Begin
-            </Button>
+            <InteractiveHoverButton text="Begin" />
           </DialogTrigger>
           <DialogContent className="bg-slate-950 border-slate-800 text-white sm:max-w-md p-8">
             <DialogTitle className="sr-only">Voice Enrollment</DialogTitle>

@@ -105,7 +105,12 @@ function BentoCard({ children, className }: { children: React.ReactNode, classNa
 
 function BiometricVisualizer() {
   const [match, setMatch] = useState(85);
+  const [heights, setHeights] = useState<number[]>([]);
+
   useEffect(() => {
+    // Initialize random heights on client-side only
+    setHeights(Array.from({ length: 8 }, () => Math.random() * 100));
+
     const interval = setInterval(() => {
       setMatch(prev => Math.min(99, Math.max(80, prev + (Math.random() - 0.5) * 10)));
     }, 1000);
@@ -115,11 +120,11 @@ function BiometricVisualizer() {
   return (
     <div className="flex items-center justify-between gap-4">
       <div className="flex gap-1 h-8 items-center">
-        {[...Array(8)].map((_, i) => (
+        {heights.map((h, i) => (
           <div 
             key={i} 
             className="w-1 bg-blue-500 rounded-full animate-pulse" 
-            style={{ height: `${Math.random() * 100}%`, animationDelay: `${i * 0.1}s` }} 
+            style={{ height: `${h}%`, animationDelay: `${i * 0.1}s` }} 
           />
         ))}
       </div>
