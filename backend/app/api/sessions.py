@@ -1,8 +1,9 @@
 """Session API endpoints"""
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from ..models.schemas import SessionCreate, SessionResponse, RiskResponse, RiskStatus
 from ..services import get_session_manager
 from ..services.risk_engine import RiskEngine
+from ..dependencies import verify_token
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 
@@ -11,7 +12,7 @@ risk_engine = RiskEngine()
 
 
 @router.post("", response_model=SessionResponse)
-async def create_session(request: SessionCreate):
+async def create_session(user_id: str = Depends(verify_token)):
     """
     Create a new call session.
     
@@ -21,7 +22,7 @@ async def create_session(request: SessionCreate):
     session_manager = get_session_manager()
     
     # Create new session
-    session = session_manager.create_session(user_id=request.user_id)
+    session = session_manager.create_session(user_id=user_id)
     
     # Generate agent greeting
     agent_prompt = (
@@ -31,7 +32,7 @@ async def create_session(request: SessionCreate):
     
     return SessionResponse(
         session_id=session.session_id,
-        user_id=request.user_id,
+        user_id=user_id,
         agent_prompt=agent_prompt,
     )
 
