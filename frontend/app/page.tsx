@@ -6,6 +6,13 @@ import EnrollmentPreview from '@/components/landing/EnrollmentPreview';
 import ArchitectureSection from '@/components/landing/ArchitectureSection';
 import SocialProof from '@/components/landing/SocialProof';
 import Footer from '@/components/landing/Footer';
+"use client";
+
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { ArrowRight, Fingerprint, ShieldAlert, Bot, Activity, Lock, Zap } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
 
 export default function Home() {
   return (
