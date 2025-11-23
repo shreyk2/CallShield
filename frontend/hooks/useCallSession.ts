@@ -23,6 +23,9 @@ export const useCallSession = () => {
       // 1. Create Session
       const session = await apiService.createSession();
       setSessionId(session.session_id);
+      
+      // Save to local storage for Dashboard access across tabs
+      localStorage.setItem('active_session_id', session.session_id);
 
       // 2. Connect WebSocket
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';

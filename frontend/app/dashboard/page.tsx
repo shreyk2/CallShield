@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { RiskWidget } from "@/components/RiskWidget";
 import { useRiskPolling } from "@/hooks/useRiskPolling";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,17 @@ import { Button } from "@/components/ui/button";
 export default function DashboardPage() {
   const [sessionId, setSessionId] = useState<string>('');
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [isAutoLoaded, setIsAutoLoaded] = useState(false);
+
+  useEffect(() => {
+    // Check for active session from Call page
+    const storedSessionId = localStorage.getItem('active_session_id');
+    if (storedSessionId) {
+      setSessionId(storedSessionId);
+      setActiveSessionId(storedSessionId);
+      setIsAutoLoaded(true);
+    }
+  }, []);
   
   const { riskScore, error } = useRiskPolling(activeSessionId);
 
@@ -17,6 +28,7 @@ export default function DashboardPage() {
     e.preventDefault();
     if (sessionId.trim()) {
       setActiveSessionId(sessionId.trim());
+      setIsAutoLoaded(false);
     }
   };
 
@@ -37,13 +49,24 @@ export default function DashboardPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleMonitor} className="flex gap-4 mb-6">
-            <Input 
-              placeholder="Enter Session ID..." 
-              value={sessionId}
-              onChange={(e) => setSessionId(e.target.value)}
-              className="max-w-sm"
-            />
+          <form onSubmit={handleMonitor} className="flex gap-4 mb-6 items-end">
+            <div className="flex-1 max-w-sm space-y-2">
+              <div className="flex justify-between">
+                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  Session ID
+                </label>
+                {isAutoLoaded && (
+                  <span className="text-xs text-green-600 font-medium animate-pulse">
+                    ● Live Session Linked
+                  </span>
+                )}
+              </div>
+              <Input 
+                placeholder="Enter Session ID..." 
+                value={sessionId}
+                onChange={(e) => setSessionId(e.target.value)}
+              />
+            </div>
             <Button type="submit">Monitor Session</Button>
           </form>
 
