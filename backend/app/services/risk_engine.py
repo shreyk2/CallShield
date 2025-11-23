@@ -34,8 +34,7 @@ class RiskEngine:
         mean_match = sum(recent_match_scores) / len(recent_match_scores) if recent_match_scores else 0.0
         
         # Fake scores: Use LAST score only (no averaging) for immediate AI detection
-        real_fake_scores = [s for s in fake_scores if s > 0.0]
-        mean_fake = real_fake_scores[-1] if real_fake_scores else 0.0
+        mean_fake = fake_scores[-1] if fake_scores else 0.0
         
         # Determine status and generate reason
         status, reason = self._assess_risk(mean_match, mean_fake)

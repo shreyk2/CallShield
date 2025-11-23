@@ -486,7 +486,7 @@ export default function DashboardPage() {
                   </span>
                   <span className="text-xs text-slate-500">Last: 30s ago</span>
                 </div>
-                {voiceMatch === 0 ? (
+                {(!riskScore || riskScore.status === 'INITIAL') ? (
                   <div className="flex items-center gap-2 py-2">
                     <span className="text-2xl font-medium text-slate-400">Calculating...</span>
                   </div>
@@ -517,7 +517,7 @@ export default function DashboardPage() {
                   </span>
                   <Activity className="h-4 w-4 text-slate-600" />
                 </div>
-                {fraudRisk === 0 ? (
+                {(!riskScore || riskScore.status === 'INITIAL') ? (
                   <div className="flex items-center gap-2 py-2">
                     <span className="text-2xl font-medium text-slate-400">Calculating...</span>
                   </div>
