@@ -28,7 +28,9 @@ class Settings(BaseSettings):
     
     # Deepfake detection
     fake_threshold: float = 0.2  # Probability threshold for SAFE
-    deepfake_api_url: str | None = None  # Stub for now
+    deepfake_api_url: str = "https://ai-audio-detect.undetectable.ai"
+    deepfake_api_key: str = ""
+    deepfake_user_id: str = ""
     
     # Session management
     max_sessions: int = 100

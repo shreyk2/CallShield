@@ -29,9 +29,13 @@ class RiskEngine:
         if not match_scores and not fake_scores:
             return 0.0, 0.0, RiskStatus.INITIAL, "Waiting for caller audio..."
         
-        # Compute mean scores
-        mean_match = sum(match_scores) / len(match_scores) if match_scores else 0.0
-        mean_fake = sum(fake_scores) / len(fake_scores) if fake_scores else 0.0
+        # Match scores: Average last 3-5 scores for recent trend
+        recent_match_scores = match_scores[-5:] if len(match_scores) > 5 else match_scores
+        mean_match = sum(recent_match_scores) / len(recent_match_scores) if recent_match_scores else 0.0
+        
+        # Fake scores: Use LAST score only (no averaging) for immediate AI detection
+        real_fake_scores = [s for s in fake_scores if s > 0.0]
+        mean_fake = real_fake_scores[-1] if real_fake_scores else 0.0
         
         # Determine status and generate reason
         status, reason = self._assess_risk(mean_match, mean_fake)
