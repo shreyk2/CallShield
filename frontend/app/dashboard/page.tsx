@@ -487,19 +487,27 @@ export default function DashboardPage() {
                   </span>
                   <span className="text-xs text-slate-500">Last: 30s ago</span>
                 </div>
-                <div className="flex items-end gap-2">
-                  <span className="text-3xl font-bold text-white">{voiceMatch.toFixed(1)}%</span>
-                  <span className={cn("text-sm mb-1 font-medium", voiceConfidence.color)}>{voiceConfidence.label}</span>
-                </div>
-                <div className="h-2 w-full bg-slate-800 rounded-full mt-2 overflow-hidden">
-                  <div 
-                    className={cn(
-                      "h-full transition-all duration-1000 ease-out",
-                      voiceMatch >= 80 ? "bg-green-500" : voiceMatch >= 50 ? "bg-yellow-500" : "bg-red-500"
-                    )}
-                    style={{ width: `${voiceMatch}%` }}
-                  />
-                </div>
+                {voiceMatch === 0 ? (
+                  <div className="flex items-center gap-2 py-2">
+                    <span className="text-2xl font-medium text-slate-400">Calculating...</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-end gap-2">
+                      <span className="text-3xl font-bold text-white">{voiceMatch.toFixed(1)}%</span>
+                      <span className={cn("text-sm mb-1 font-medium", voiceConfidence.color)}>{voiceConfidence.label}</span>
+                    </div>
+                    <div className="h-2 w-full bg-slate-800 rounded-full mt-2 overflow-hidden">
+                      <div 
+                        className={cn(
+                          "h-full transition-all duration-1000 ease-out",
+                          voiceMatch >= 80 ? "bg-green-500" : voiceMatch >= 50 ? "bg-yellow-500" : "bg-red-500"
+                        )}
+                        style={{ width: `${voiceMatch}%` }}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* AI Fraud Score Widget */}
@@ -510,25 +518,33 @@ export default function DashboardPage() {
                   </span>
                   <Activity className="h-4 w-4 text-slate-600" />
                 </div>
-                <div className="flex items-end gap-2">
-                  <span className="text-3xl font-bold text-white">{fraudRisk.toFixed(1)}%</span>
-                  <span className={cn("text-sm mb-1 font-medium", fraudRiskLevel.color)}>{fraudRiskLevel.label}</span>
-                </div>
-                {/* Mini Bar Graph Visualization */}
-                <div className="flex items-end gap-1 h-8 mt-2">
-                  {[20, 35, 15, 45, 10, 5, 3].map((h, i) => (
-                    <div 
-                      key={i} 
-                      className={cn(
-                        "flex-1 rounded-sm transition-colors",
-                        fraudRisk >= 50 ? "bg-red-500/50 hover:bg-red-500/70" :
-                        fraudRisk >= 20 ? "bg-yellow-500/50 hover:bg-yellow-500/70" :
-                        "bg-slate-800 hover:bg-blue-500/50"
-                      )}
-                      style={{ height: `${h}%` }} 
-                    />
-                  ))}
-                </div>
+                {fraudRisk === 0 ? (
+                  <div className="flex items-center gap-2 py-2">
+                    <span className="text-2xl font-medium text-slate-400">Calculating...</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-end gap-2">
+                      <span className="text-3xl font-bold text-white">{fraudRisk.toFixed(1)}%</span>
+                      <span className={cn("text-sm mb-1 font-medium", fraudRiskLevel.color)}>{fraudRiskLevel.label}</span>
+                    </div>
+                    {/* Mini Bar Graph Visualization */}
+                    <div className="flex items-end gap-1 h-8 mt-2">
+                      {[20, 35, 15, 45, 10, 5, 3].map((h, i) => (
+                        <div 
+                          key={i} 
+                          className={cn(
+                            "flex-1 rounded-sm transition-colors",
+                            fraudRisk >= 50 ? "bg-red-500/50 hover:bg-red-500/70" :
+                            fraudRisk >= 20 ? "bg-yellow-500/50 hover:bg-yellow-500/70" :
+                            "bg-slate-800 hover:bg-blue-500/50"
+                          )}
+                          style={{ height: `${h}%` }} 
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Auth Log */}
