@@ -104,12 +104,19 @@ export const useAudioCapture = (onAudioData?: (data: Int16Array) => void) => {
     }
   }, [isRecording]);
 
+  const reset = useCallback(() => {
+    setAudioUrl(null);
+    setAudioBlob(null);
+    setIsRecording(false);
+  }, []);
+
   return {
     isRecording,
     audioUrl,
     audioBlob,
     startCapture,
     stopCapture,
+    reset,
     analyser: analyserRef.current,
   };
 };
