@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 
-export const useAudioCapture = () => {
+export const useAudioCapture = (onAudioData?: (data: Int16Array) => void) => {
   const [isRecording, setIsRecording] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
@@ -24,12 +24,12 @@ export const useAudioCapture = () => {
       const analyser = audioContext.createAnalyser();
       const source = audioContext.createMediaStreamSource(stream);
       // Use ScriptProcessor for raw PCM access (bufferSize, inputChannels, outputChannels)
-      const processor = audioContext.createScriptProcessor(4096, 1, 1);
+      // 4096 samples @ 16kHz is ~256ms. 1600 samples is 100ms.
+      // Backend docs suggest 1600 samples (100ms).
+      const processor = audioContext.createScriptProcessor(2048, 1, 1);
       
       analyser.fftSize = 256;
       source.connect(analyser);
-      // We need to connect source -> analyser -> processor -> destination
-      // Processor -> destination is needed for the script processor to fire events
       analyser.connect(processor);
       processor.connect(audioContext.destination);
       
@@ -40,7 +40,19 @@ export const useAudioCapture = () => {
 
       processor.onaudioprocess = (e) => {
         const channelData = e.inputBuffer.getChannelData(0);
-        // Clone the data because the buffer is reused
+        
+        // If we have a callback, convert and send immediately
+        if (onAudioData) {
+          const pcmData = new Int16Array(channelData.length);
+          for (let i = 0; i < channelData.length; i++) {
+            // Clamp and convert to 16-bit PCM
+            const s = Math.max(-1, Math.min(1, channelData[i]));
+            pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+          }
+          onAudioData(pcmData);
+        }
+
+        // Also store for blob creation (enrollment use case)
         audioDataRef.current.push(new Float32Array(channelData));
       };
 
@@ -51,7 +63,7 @@ export const useAudioCapture = () => {
     } catch (error) {
       console.error('Failed to start audio capture', error);
     }
-  }, []);
+  }, [onAudioData]);
 
   const stopCapture = useCallback(() => {
     if (audioContextRef.current && isRecording) {

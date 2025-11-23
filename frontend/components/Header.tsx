@@ -21,6 +21,11 @@ export function Header() {
       active: pathname === "/enrollment",
     },
     {
+      href: "/call",
+      label: "Call",
+      active: pathname === "/call",
+    },
+    {
       href: "/dashboard",
       label: "Dashboard",
       active: pathname === "/dashboard",
