@@ -1,13 +1,5 @@
 export type RiskLevel = 'SAFE' | 'UNCERTAIN' | 'HIGH_RISK' | 'INITIAL';
 
-export interface RiskScore {
-  level: RiskLevel;
-  score: number; // 0-100
-  voice_match_score: number;
-  deepfake_probability: number;
-  timestamp: string;
-}
-
 export interface SessionResponse {
   session_id: string;
   user_id: string;
@@ -19,6 +11,7 @@ export interface RiskResponse {
   fake_score: number;
   status: RiskLevel;
   status_reason: string;
+  num_verifications?: number;
 }
 
 export interface SessionStatus {

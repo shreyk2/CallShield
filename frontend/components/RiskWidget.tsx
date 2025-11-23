@@ -1,13 +1,13 @@
 "use client";
 
 import React from 'react';
-import { RiskScore } from '@/types';
+import { RiskResponse } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ShieldAlert, ShieldCheck, ShieldQuestion } from "lucide-react";
 
 interface RiskWidgetProps {
-  riskScore: RiskScore | null;
+  riskScore: RiskResponse | null;
 }
 
 export const RiskWidget = ({ riskScore }: RiskWidgetProps) => {
@@ -41,19 +41,24 @@ export const RiskWidget = ({ riskScore }: RiskWidgetProps) => {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-base font-medium">Live Risk Analysis</CardTitle>
-        {getRiskBadge(riskScore.level)}
+        {getRiskBadge(riskScore.status)}
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 gap-4 mt-4">
           <div className="p-3 bg-muted/50 rounded-md">
             <div className="text-xs text-muted-foreground mb-1">Voice Match</div>
-            <div className="text-2xl font-bold tracking-tight">{riskScore.voice_match_score.toFixed(1)}%</div>
+            <div className="text-2xl font-bold tracking-tight">{riskScore.match_score.toFixed(1)}%</div>
           </div>
           <div className="p-3 bg-muted/50 rounded-md">
             <div className="text-xs text-muted-foreground mb-1">Deepfake Prob</div>
-            <div className="text-2xl font-bold tracking-tight">{riskScore.deepfake_probability.toFixed(1)}%</div>
+            <div className="text-2xl font-bold tracking-tight">{riskScore.fake_score.toFixed(1)}%</div>
           </div>
         </div>
+        {riskScore.status_reason && (
+           <div className="mt-4 text-sm text-muted-foreground">
+             Reason: {riskScore.status_reason}
+           </div>
+        )}
       </CardContent>
     </Card>
   );

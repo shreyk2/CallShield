@@ -81,6 +81,7 @@ export const useCallSession = () => {
   }, [sessionId, isConnected]);
 
   return {
+    sessionId,
     isRecording,
     isConnected,
     riskStatus,

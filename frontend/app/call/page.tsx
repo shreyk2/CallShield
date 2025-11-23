@@ -8,7 +8,7 @@ import { Phone, PhoneOff, Mic, ShieldAlert, ShieldCheck, ShieldQuestion, Activit
 import { cn } from "@/lib/utils";
 
 export default function CallPage() {
-  const { isRecording, startCall, endCall, riskStatus } = useCallSession();
+  const { sessionId, isRecording, startCall, endCall, riskStatus } = useCallSession();
   const [duration, setDuration] = useState(0);
 
   // Timer logic
@@ -147,6 +147,13 @@ export default function CallPage() {
                 </Button>
               )}
             </div>
+
+            {/* Session ID Display */}
+            {sessionId && (
+              <div className="text-xs text-muted-foreground font-mono bg-muted/50 px-3 py-1 rounded-full">
+                Session ID: {sessionId}
+              </div>
+            )}
 
           </CardContent>
         </Card>

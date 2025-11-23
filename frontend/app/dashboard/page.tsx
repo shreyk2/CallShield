@@ -1,13 +1,24 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { RiskWidget } from "@/components/RiskWidget";
 import { useRiskPolling } from "@/hooks/useRiskPolling";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export default function DashboardPage() {
-  // Mock session ID for now to trigger polling
-  const { riskScore } = useRiskPolling('mock-session-id');
+  const [sessionId, setSessionId] = useState<string>('');
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  
+  const { riskScore, error } = useRiskPolling(activeSessionId);
+
+  const handleMonitor = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (sessionId.trim()) {
+      setActiveSessionId(sessionId.trim());
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -20,12 +31,28 @@ export default function DashboardPage() {
 
       <Card className="border-border/50 shadow-lg">
         <CardHeader>
-          <CardTitle>Session Analysis</CardTitle>
+          <CardTitle>Session Monitor</CardTitle>
           <CardDescription>
-            View detailed risk metrics for the current or past sessions.
+            Enter a Session ID to monitor its risk status.
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <form onSubmit={handleMonitor} className="flex gap-4 mb-6">
+            <Input 
+              placeholder="Enter Session ID..." 
+              value={sessionId}
+              onChange={(e) => setSessionId(e.target.value)}
+              className="max-w-sm"
+            />
+            <Button type="submit">Monitor Session</Button>
+          </form>
+
+          {error && (
+            <div className="text-red-500 mb-4 text-sm">
+              {error}
+            </div>
+          )}
+
           <RiskWidget riskScore={riskScore} />
         </CardContent>
       </Card>
