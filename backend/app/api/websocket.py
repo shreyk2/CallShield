@@ -122,6 +122,7 @@ async def audio_stream(websocket: WebSocket, session_id: str):
                         
                         # Store match score
                         session_manager.append_match_score(session_id, match_score)
+                        print(f"  ✅ Voice match score: {match_score:.3f} | Total scores: {len(session.match_scores)}")
                         
                     except Exception as e:
                         pass
@@ -133,6 +134,7 @@ async def audio_stream(websocket: WebSocket, session_id: str):
                     
                     if time_since_last_check >= deepfake_interval and caller_duration >= 5.0:
                         try:
+                            print(f"  🤖 Running deepfake detection ({caller_duration:.1f}s of audio, last check: {last_deepfake_check:.1f}s)...")
                             # Convert ALL caller_audio to WAV format
                             audio_tensor = audio_processor.concatenate_chunks(session.caller_audio)
                             # Properly convert to int16 with clipping to avoid overflow
