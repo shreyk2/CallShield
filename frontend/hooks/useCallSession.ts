@@ -3,7 +3,7 @@ import { apiService } from '@/services/api';
 import { useAudioCapture } from './useAudioCapture';
 import { RiskResponse } from '@/types';
 
-export const useCallSession = (userId: string) => {
+export const useCallSession = () => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [riskStatus, setRiskStatus] = useState<RiskResponse | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -21,7 +21,7 @@ export const useCallSession = (userId: string) => {
   const startCall = async () => {
     try {
       // 1. Create Session
-      const session = await apiService.createSession(userId);
+      const session = await apiService.createSession();
       setSessionId(session.session_id);
 
       // 2. Connect WebSocket

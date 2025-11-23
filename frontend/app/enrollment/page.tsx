@@ -12,28 +12,20 @@ import { apiService } from "@/services/api";
 
 export default function EnrollmentPage() {
   const [fullName, setFullName] = useState('');
-  const [username, setUsername] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const { isRecording, audioUrl, audioBlob, startCapture, stopCapture, analyser } = useAudioCapture();
 
   const handleSave = async () => {
-    if (!audioBlob || !username || !fullName) {
+    if (!audioBlob || !fullName) {
       alert('Please complete all fields and record audio');
       return;
     }
 
     setIsSaving(true);
     try {
-      await apiService.enrollUser(username, fullName, audioBlob);
-      
-      // Save to session storage for the UI
-      sessionStorage.setItem("callshield_username", username);
-      // Dispatch event so Header updates immediately
-      window.dispatchEvent(new Event("user_session_updated"));
-
+      await apiService.enrollUser(fullName, audioBlob);
       alert('Enrollment successful!');
       setFullName('');
-      setUsername('');
     } catch (error) {
       console.error(error);
       alert('Enrollment failed: ' + (error as Error).message);
@@ -70,15 +62,6 @@ export default function EnrollmentPage() {
                 onChange={(e) => setFullName(e.target.value)}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input 
-                id="username" 
-                placeholder="jdoe123" 
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
-            </div>
           </CardContent>
         </Card>
 
@@ -101,7 +84,7 @@ export default function EnrollmentPage() {
                 isRecording={isRecording}
                 analyser={analyser}
                 onStart={() => {
-                  if (fullName && username) {
+                  if (fullName) {
                     startCapture();
                   } else {
                     alert("Please enter your details first.");

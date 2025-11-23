@@ -1,5 +1,5 @@
 """Enrollment endpoints for voice registration"""
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional
@@ -9,6 +9,7 @@ from pathlib import Path
 from ..services.voice_embedding import get_voice_embedding
 from ..services.audio_processor import AudioProcessor
 from ..config import get_settings
+from ..dependencies import verify_token
 
 router = APIRouter(prefix="/enrollment", tags=["enrollment"])
 
@@ -33,16 +34,16 @@ class EnrollmentResponse(BaseModel):
 @router.post("/create", response_model=EnrollmentResponse)
 async def create_enrollment(
     audio: UploadFile = File(...),
-    user_id: str = Form(...),
-    name: str = Form(...)
+    name: str = Form(...),
+    user_id: str = Depends(verify_token)
 ):
     """
     Create voice enrollment for a new user.
     
     Expects:
-    - user_id: Unique identifier for user (e.g., "john_doe_123")
     - name: Display name (e.g., "John Doe")
     - audio: WAV file with 10+ seconds of clear speech (16kHz, mono preferred)
+    - Authorization: Bearer <token>
     
     Returns enrollment status and embedding info.
     """
